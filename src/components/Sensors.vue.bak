@@ -1,0 +1,1387 @@
+<template>
+  <div class="sensors-page">
+    <div class="filters-section">
+      <button @click="toggleFilters" :aria-expanded="showFilters" class="filter-toggle-btn">
+        {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+
+      <div v-show="showFilters" class="search-and-filters-popover">
+        <input
+          type="text"
+          v-model="searchTerm"
+          placeholder="Search by serial/part number..."
+          class="search-input"
+          @input="filterSensors"
+        >
+        <select v-model="filterStatus" @change="filterSensors" class="filter-select">
+          <option value="">All Statuses</option>
+          <option value="OP">Operational</option>
+          <option value="IS">In Stock</option>
+          <option value="OO">On Order</option>
+          <option value="DC">Decommissioned</option>
+        </select>
+        <select v-model="filterSensorType" @change="filterSensors" class="filter-select">
+          <option value="">All Sensor Types</option>
+          <option v-for="sensorType in sensorTypes" :key="sensorType.id" :value="sensorType.id">
+            {{ getSensorTypeLabel(sensorType.id) }}
+          </option>
+        </select>
+        <select v-model="filterDetector" @change="filterSensors" class="filter-select">
+          <option value="">All Detectors</option>
+          <option v-for="detector in detectors" :key="detector.id" :value="detector.id">
+            {{ getDetectorLabel(detector.id) }}
+          </option>
+        </select>
+        <div class="date-filter-container">
+          <label for="expiresBefore" class="date-label">Expires Before:</label>
+          <input
+            id="expiresBefore"
+            type="date"
+            v-model="filterExpiresBefore"
+            @change="filterSensors"
+            class="date-input"
+          />
+        </div>
+        <div class="checkbox-container">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              v-model="showDecommissionedSensors"
+              @change="filterSensors"
+            />
+            Show Decommissioned Sensors
+          </label>
+        </div>
+        <div class="reset-btn-wrapper">
+          <button @click="resetFilters" class="reset-btn">Reset Filters</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-container">
+      <div class="header-actions">
+        <h1>Sensors Management</h1>
+        <div class="action-buttons">
+          <router-link to="/sensors/new" class="btn btn-primary">Add New Sensor</router-link>
+          <router-link to="/sensors/add-multiple" class="btn btn-primary">Add Multiple Sensors</router-link>
+          <button
+            @click="openUpdateMultipleSensors"
+            :disabled="selectedSensors.length === 0"
+            class="btn btn-primary"
+          >
+            Update Multiple Sensors
+          </button>
+          <button
+            @click="downloadPDF"
+            class="btn btn-primary"
+            title="Download as PDF"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+              <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="sensors-table">
+          <thead>
+            <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  @change="toggleSelectAll"
+                  :checked="selectedSensors.length === filteredSensors.length && filteredSensors.length > 0"
+                />
+              </th>
+              <th @click="sortBy('serial')" class="sortable">
+                Serial <span v-if="sortKey === 'serial'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="sortBy('sensor_type')" class="sortable">
+                Type <span v-if="sortKey === 'sensor_type'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="sortBy('sensorgas')" class="sortable">
+                Gas <span v-if="sortKey === 'sensorgas'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="sortBy('detector')" class="sortable">
+                Detector <span v-if="sortKey === 'detector'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="sortBy('status')" class="sortable">
+                Status <span v-if="sortKey === 'status'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="sortBy('order_date')" class="sortable">
+                Ordered <span v-if="sortKey === 'order_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="sortBy('receive_date')" class="sortable">
+                Received <span v-if="sortKey === 'receive_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="sortBy('warranty_date')" class="sortable">
+                Warranty <span v-if="sortKey === 'warranty_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="sortBy('expiry_date')" class="sortable">
+                Expiry <span v-if="sortKey === 'expiry_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="sensor in filteredSensors" :key="sensor.id">
+              <td>
+                <input
+                  type="checkbox"
+                  :value="sensor.id"
+                  v-model="selectedSensors"
+                />
+              </td>
+              <td>
+                <router-link :to="`/sensors/${sensor.id}`" class="sensor-link">
+                  {{ sensor.serial || 'N/A' }}
+                </router-link>
+              </td>
+              <td>{{ getSensorTypeLabel(sensor.sensor_type) || 'N/A' }}</td>
+              <td>{{ getSensorTypeGas(sensor.sensor_type) || 'N/A' }}</td>
+              <td>
+                <router-link v-if="sensor.detector" :to="`/detectors/${sensor.detector}`" class="detector-link">
+                  {{ getDetectorLabel(sensor.detector) }}
+                </router-link>
+                <span v-else>N/A</span>
+              </td>
+              <td>{{ getStatusDisplay(sensor.status) }}</td>
+              <td>{{ sensor.order_date || 'N/A' }}</td>
+              <td>{{ sensor.receive_date || 'N/A' }}</td>
+              <td>{{ sensor.warranty_date || 'N/A' }}</td>
+              <td>{{ sensor.expiry_date || 'N/A' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div v-if="loading" class="loading">Loading sensors...</div>
+        <div v-else-if="totalFilteredSensors === 0" class="no-data">No sensors found</div>
+
+        <!-- Pagination Controls -->
+        <div v-if="!loading && totalFilteredSensors > 0" class="pagination-container">
+          <div class="pagination-info">
+            Showing {{ ((currentPage - 1) * sensorsPerPage) + 1 }} to
+            {{ Math.min(currentPage * sensorsPerPage, totalFilteredSensors) }} of
+            {{ totalFilteredSensors }} sensors
+          </div>
+          <div class="pagination-controls">
+            <button @click="prevPage" :disabled="currentPage === 1" class="btn btn-pagination">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
+            <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+
+            <button @click="nextPage" :disabled="currentPage === totalPages" class="btn btn-pagination">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+// State for sensors data
+const sensors = ref([]);
+const loading = ref(true);
+
+// State for related data
+const sensorTypes = ref([]);
+const detectors = ref([]);
+
+// State for sorting and filtering
+const sortKey = ref('serial');
+const sortDirection = ref('asc');
+const searchTerm = ref('');
+const filterStatus = ref('');
+const filterSensorType = ref('');
+const filterDetector = ref('');
+const filterExpiresBefore = ref('');
+const showDecommissionedSensors = ref(false);
+
+// State for filter panel visibility
+const showFilters = ref(false);
+
+// State for pagination
+const currentPage = ref(1);
+const sensorsPerPage = ref(50);
+
+// State for selected sensors
+const selectedSensors = ref([]);
+
+// Initialize state from localStorage
+onMounted(async () => {
+  // Load saved state from localStorage
+  const savedState = localStorage.getItem('sensorsFilterState');
+  if (savedState) {
+    const state = JSON.parse(savedState);
+    sortKey.value = state.sortKey || 'serial';
+    sortDirection.value = state.sortDirection || 'asc';
+    searchTerm.value = state.searchTerm || '';
+    filterStatus.value = state.filterStatus || '';
+    filterSensorType.value = state.filterSensorType || '';
+    filterDetector.value = state.filterDetector || '';
+    filterExpiresBefore.value = state.filterExpiresBefore || '';
+    showDecommissionedSensors.value = state.showDecommissionedSensors || false;
+  }
+
+  // Load sensor types and detectors first
+  await Promise.all([
+    fetchSensorTypes(),
+    fetchDetectors()
+  ]);
+
+  // Then load sensors
+  await fetchSensors();
+});
+
+// Function to save state to localStorage
+const saveStateToLocalStorage = () => {
+  const state = {
+    sortKey: sortKey.value,
+    sortDirection: sortDirection.value,
+    searchTerm: searchTerm.value,
+    filterStatus: filterStatus.value,
+    filterSensorType: filterSensorType.value,
+    filterDetector: filterDetector.value,
+    filterExpiresBefore: filterExpiresBefore.value,
+    showDecommissionedSensors: showDecommissionedSensors.value
+  };
+  localStorage.setItem('sensorsFilterState', JSON.stringify(state));
+};
+
+// Toggle select all sensors
+const toggleSelectAll = () => {
+  if (selectedSensors.value.length === filteredSensors.value.length) {
+    // If all are selected, deselect all
+    selectedSensors.value = [];
+  } else {
+    // Otherwise, select all visible sensors
+    selectedSensors.value = filteredSensors.value.map(sensor => sensor.id);
+  }
+};
+
+// Open update multiple sensors form
+const openUpdateMultipleSensors = () => {
+  // Navigate to the update multiple sensors page with selected sensor IDs
+  router.push({
+    name: 'UpdateMultipleSensors',
+    query: { ids: selectedSensors.value.join(',') }
+  });
+};
+
+// Watch for changes to filter/sort parameters and save to localStorage
+watch([sortKey, sortDirection, searchTerm, filterStatus, filterSensorType, filterDetector, filterExpiresBefore, showDecommissionedSensors], () => {
+  // Reset to first page when filters/sorting changes
+  currentPage.value = 1;
+  saveStateToLocalStorage();
+}, { deep: true });
+
+// Fetch sensor types from the API
+const fetchSensorTypes = async () => {
+  try {
+    const response = await fetch('/inventory/sensortypes/');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    sensorTypes.value = await response.json();
+  } catch (error) {
+    console.error('Error fetching sensor types:', error);
+  }
+};
+
+// Fetch detectors from the API
+const fetchDetectors = async () => {
+  try {
+    const response = await fetch('/inventory/detectors/');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    detectors.value = await response.json();
+  } catch (error) {
+    console.error('Error fetching detectors:', error);
+  }
+};
+
+// Fetch sensors from the API
+const fetchSensors = async () => {
+  try {
+    loading.value = true;
+
+    // Build query parameters based on filters
+    const params = new URLSearchParams();
+
+    // Add status filter
+    if (filterStatus.value) {
+      params.append('status', filterStatus.value);
+    }
+
+    // Add sensor type filter
+    if (filterSensorType.value) {
+      params.append('sensor_type', filterSensorType.value);
+    }
+
+    // Add detector filter
+    if (filterDetector.value) {
+      params.append('detector', filterDetector.value);
+    }
+
+    // Add expires before filter to the API call
+    if (filterExpiresBefore.value) {
+      params.append('expiry_date_lte', filterExpiresBefore.value);
+    }
+
+    // Build the URL with parameters
+    let url = '/inventory/sensors/';
+    if (params.toString()) {
+      url += '?' + params.toString();
+    }
+
+    // Fetch sensors from the Django REST API
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const sensorData = await response.json();
+    sensors.value = sensorData;
+  } catch (error) {
+    console.error('Error fetching sensors:', error);
+    // In case of error, we could show a user-friendly message
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Status display mapping
+const getStatusDisplay = (statusValue) => {
+  const statusMap = {
+    'OP': 'Operational',
+    'IS': 'In Stock',
+    'OO': 'On Order',
+    'DC': 'Decommissioned'
+  };
+  return statusMap[statusValue] || statusValue;
+};
+
+// Helper functions to get related object labels using local state
+const getSensorTypeLabel = (sensorTypeId) => {
+  if (!sensorTypeId) return 'N/A';
+  const sensorType = sensorTypes.value.find(st => st.id === sensorTypeId);
+  return sensorType ? sensorType.part_number : 'Unknown Sensor Type';
+};
+
+const getSensorTypeGas = (sensorTypeId) => {
+  if (!sensorTypeId) return 'N/A';
+  const sensorType = sensorTypes.value.find(st => st.id === sensorTypeId);
+  if (!sensorType) return 'Unknown Sensor Type';
+
+  // Map gas codes to their display names
+  const gasMap = {
+    'CO': 'CO',
+    'HS': 'H2S',
+    'LE': 'LEL',
+    'O2': 'O2',
+    'VO': 'VOC',
+    'HC': 'HCN'
+  };
+
+  return gasMap[sensorType.sensorgas] || sensorType.sensorgas;
+};
+
+const getDetectorLabel = (detectorId) => {
+  if (!detectorId) return 'N/A';
+  const detector = detectors.value.find(d => d.id === detectorId);
+  return detector ? detector.label : 'Not Assigned';
+};
+
+// Computed property to get filtered and sorted sensors
+const filteredSensors = computed(() => {
+  let result = [...sensors.value];
+
+  // Apply search filter - only on serial and part number
+  if (searchTerm.value) {
+    const term = searchTerm.value.toLowerCase();
+    result = result.filter(sensor =>
+      (sensor.serial && sensor.serial.toLowerCase().includes(term)) ||
+      (getSensorTypeLabel(sensor.sensor_type).toLowerCase().includes(term))
+    );
+  }
+
+  // Apply status filter
+  if (filterStatus.value) {
+    result = result.filter(sensor => sensor.status === filterStatus.value);
+  }
+
+  // Apply sensor type filter
+  if (filterSensorType.value) {
+    result = result.filter(sensor =>
+      typeof sensor.sensor_type === 'object' ?
+        sensor.sensor_type.id === filterSensorType.value :
+        sensor.sensor_type === filterSensorType.value
+    );
+  }
+
+  // Apply detector filter
+  if (filterDetector.value) {
+    result = result.filter(sensor =>
+      sensor.detector === filterDetector.value
+    );
+  }
+
+  // Apply expires before filter
+  if (filterExpiresBefore.value) {
+    const expiresBeforeDate = new Date(filterExpiresBefore.value);
+    result = result.filter(sensor => {
+      if (!sensor.expiry_date) return false; // Exclude sensors without expiry dates
+      const sensorExpiryDate = new Date(sensor.expiry_date);
+      return sensorExpiryDate < expiresBeforeDate;
+    });
+  }
+
+  // Apply show decommissioned sensors filter
+  if (!showDecommissionedSensors.value) {
+    // If showDecommissionedSensors is false, filter out sensors with status "DC" (Decommissioned)
+    result = result.filter(sensor => sensor.status !== 'DC');
+  }
+
+  // Apply sorting
+  if (sortKey.value) {
+    result.sort((a, b) => {
+      let valA = a[sortKey.value];
+      let valB = b[sortKey.value];
+
+      // Handle nested properties
+      if (sortKey.value === 'sensor_type') {
+        valA = getSensorTypeLabel(a.sensor_type) || '';
+        valB = getSensorTypeLabel(b.sensor_type) || '';
+      } else if (sortKey.value === 'sensorgas') {
+        valA = getSensorTypeGas(a.sensor_type) || '';
+        valB = getSensorTypeGas(b.sensor_type) || '';
+      } else if (sortKey.value === 'detector') {
+        valA = getDetectorLabel(a.detector) || '';
+        valB = getDetectorLabel(b.detector) || '';
+      } else if (sortKey.value === 'receive_date' || sortKey.value === 'expiry_date' || sortKey.value === 'order_date' || sortKey.value === 'warranty_date') {
+        valA = valA ? new Date(valA) : new Date(0);
+        valB = valB ? new Date(valB) : new Date(0);
+      } else {
+        valA = valA || '';
+        valB = valB || '';
+      }
+
+      if (sortDirection.value === 'asc') {
+        return valA > valB ? 1 : -1;
+      } else {
+        return valA < valB ? 1 : -1;
+      }
+    });
+  }
+
+  // Apply pagination
+  const startIndex = (currentPage.value - 1) * sensorsPerPage.value;
+  const endIndex = startIndex + sensorsPerPage.value;
+  return result.slice(startIndex, endIndex);
+});
+
+// Computed property to get total number of pages
+const totalPages = computed(() => {
+  // Calculate total filtered sensors
+  let result = [...sensors.value];
+
+  // Apply search filter - only on serial and part number
+  if (searchTerm.value) {
+    const term = searchTerm.value.toLowerCase();
+    result = result.filter(sensor =>
+      (sensor.serial && sensor.serial.toLowerCase().includes(term)) ||
+      (getSensorTypeLabel(sensor.sensor_type).toLowerCase().includes(term))
+    );
+  }
+
+  // Apply status filter
+  if (filterStatus.value) {
+    result = result.filter(sensor => sensor.status === filterStatus.value);
+  }
+
+  // Apply sensor type filter
+  if (filterSensorType.value) {
+    result = result.filter(sensor =>
+      typeof sensor.sensor_type === 'object' ?
+        sensor.sensor_type.id === filterSensorType.value :
+        sensor.sensor_type === filterSensorType.value
+    );
+  }
+
+  // Apply detector filter
+  if (filterDetector.value) {
+    result = result.filter(sensor =>
+      sensor.detector === filterDetector.value
+    );
+  }
+
+  // Apply expires before filter
+  if (filterExpiresBefore.value) {
+    const expiresBeforeDate = new Date(filterExpiresBefore.value);
+    result = result.filter(sensor => {
+      if (!sensor.expiry_date) return false; // Exclude sensors without expiry dates
+      const sensorExpiryDate = new Date(sensor.expiry_date);
+      return sensorExpiryDate < expiresBeforeDate;
+    });
+  }
+
+  // Apply show decommissioned sensors filter
+  if (!showDecommissionedSensors.value) {
+    // If showDecommissionedSensors is false, filter out sensors with status "DC" (Decommissioned)
+    result = result.filter(sensor => sensor.status !== 'DC');
+  }
+
+  // Apply sorting
+  if (sortKey.value) {
+    result.sort((a, b) => {
+      let valA = a[sortKey.value];
+      let valB = b[sortKey.value];
+
+      // Handle nested properties
+      if (sortKey.value === 'sensor_type') {
+        valA = getSensorTypeLabel(a.sensor_type) || '';
+        valB = getSensorTypeLabel(b.sensor_type) || '';
+      } else if (sortKey.value === 'sensorgas') {
+        valA = getSensorTypeGas(a.sensor_type) || '';
+        valB = getSensorTypeGas(b.sensor_type) || '';
+      } else if (sortKey.value === 'detector') {
+        valA = getDetectorLabel(a.detector) || '';
+        valB = getDetectorLabel(b.detector) || '';
+      } else if (sortKey.value === 'receive_date' || sortKey.value === 'expiry_date' || sortKey.value === 'order_date' || sortKey.value === 'warranty_date') {
+        valA = valA ? new Date(valA) : new Date(0);
+        valB = valB ? new Date(valB) : new Date(0);
+      } else {
+        valA = valA || '';
+        valB = valB || '';
+      }
+
+      if (sortDirection.value === 'asc') {
+        return valA > valB ? 1 : -1;
+      } else {
+        return valA < valB ? 1 : -1;
+      }
+    });
+  }
+
+  return Math.ceil(result.length / sensorsPerPage.value);
+});
+
+// Computed property to get the total number of filtered sensors (before pagination)
+const totalFilteredSensors = computed(() => {
+  let result = [...sensors.value];
+
+  // Apply search filter - only on serial and part number
+  if (searchTerm.value) {
+    const term = searchTerm.value.toLowerCase();
+    result = result.filter(sensor =>
+      (sensor.serial && sensor.serial.toLowerCase().includes(term)) ||
+      (getSensorTypeLabel(sensor.sensor_type).toLowerCase().includes(term))
+    );
+  }
+
+  // Apply status filter
+  if (filterStatus.value) {
+    result = result.filter(sensor => sensor.status === filterStatus.value);
+  }
+
+  // Apply sensor type filter
+  if (filterSensorType.value) {
+    result = result.filter(sensor =>
+      typeof sensor.sensor_type === 'object' ?
+        sensor.sensor_type.id === filterSensorType.value :
+        sensor.sensor_type === filterSensorType.value
+    );
+  }
+
+  // Apply detector filter
+  if (filterDetector.value) {
+    result = result.filter(sensor =>
+      sensor.detector === filterDetector.value
+    );
+  }
+
+  // Apply expires before filter
+  if (filterExpiresBefore.value) {
+    const expiresBeforeDate = new Date(filterExpiresBefore.value);
+    result = result.filter(sensor => {
+      if (!sensor.expiry_date) return false; // Exclude sensors without expiry dates
+      const sensorExpiryDate = new Date(sensor.expiry_date);
+      return sensorExpiryDate < expiresBeforeDate;
+    });
+  }
+
+  // Apply show decommissioned sensors filter
+  if (!showDecommissionedSensors.value) {
+    // If showDecommissionedSensors is false, filter out sensors with status "DC" (Decommissioned)
+    result = result.filter(sensor => sensor.status !== 'DC');
+  }
+
+  // Apply sorting
+  if (sortKey.value) {
+    result.sort((a, b) => {
+      let valA = a[sortKey.value];
+      let valB = b[sortKey.value];
+
+      // Handle nested properties
+      if (sortKey.value === 'sensor_type') {
+        valA = getSensorTypeLabel(a.sensor_type) || '';
+        valB = getSensorTypeLabel(b.sensor_type) || '';
+      } else if (sortKey.value === 'sensorgas') {
+        valA = getSensorTypeGas(a.sensor_type) || '';
+        valB = getSensorTypeGas(b.sensor_type) || '';
+      } else if (sortKey.value === 'detector') {
+        valA = getDetectorLabel(a.detector) || '';
+        valB = getDetectorLabel(b.detector) || '';
+      } else if (sortKey.value === 'receive_date' || sortKey.value === 'expiry_date' || sortKey.value === 'order_date' || sortKey.value === 'warranty_date') {
+        valA = valA ? new Date(valA) : new Date(0);
+        valB = valB ? new Date(valB) : new Date(0);
+      } else {
+        valA = valA || '';
+        valB = valB || '';
+      }
+
+      if (sortDirection.value === 'asc') {
+        return valA > valB ? 1 : -1;
+      } else {
+        return valA < valB ? 1 : -1;
+      }
+    });
+  }
+
+  return result.length;
+});
+
+// Function to sort the table
+const sortBy = (key) => {
+  if (sortKey.value === key) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortDirection.value = 'asc';
+  }
+};
+
+// Function to filter sensors (called on input)
+const filterSensors = async () => {
+  // Reset to first page when filtering
+  currentPage.value = 1;
+
+  // Refetch sensors from the API with updated filters
+  await fetchSensors();
+};
+
+// Function to toggle the filter panel
+const toggleFilters = () => {
+  showFilters.value = !showFilters.value;
+};
+
+// Function to reset all filters
+const resetFilters = async () => {
+  searchTerm.value = '';
+  filterStatus.value = '';
+  filterSensorType.value = '';
+  filterDetector.value = '';
+  filterExpiresBefore.value = '';
+  showDecommissionedSensors.value = false;
+  sortKey.value = 'serial';
+  sortDirection.value = 'asc';
+  currentPage.value = 1; // Reset to first page when filters are reset
+
+  // Clear the saved state in localStorage
+  localStorage.removeItem('sensorsFilterState');
+
+  // Refetch sensors after resetting filters
+  await fetchSensors();
+};
+
+// Pagination functions
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+// Function to download the table as PDF
+const downloadPDF = async () => {
+  // Dynamically import jsPDF and AutoTable
+  const jsPDFModule = await import('jspdf');
+  const jsPDF = jsPDFModule.default;
+  const autoTableModule = await import('jspdf-autotable');
+  const autoTable = autoTableModule.default || autoTableModule;
+
+  // Create a new PDF document
+  const doc = new jsPDF();
+
+  // Add title
+  doc.setFontSize(18);
+  doc.text('Sensors Report', 14, 20);
+
+  // Add filter information as a delimited list
+  let yPos = 30;
+  doc.setFontSize(9); // Even smaller font for filter descriptions
+  let filterText = "Filters: ";
+  const activeFilters = [];
+
+  if (searchTerm.value) {
+    activeFilters.push(`Search: ${searchTerm.value}`);
+  }
+  if (filterStatus.value) {
+    activeFilters.push(`Status: ${getStatusDisplay(filterStatus.value)}`);
+  }
+  if (filterSensorType.value) {
+    activeFilters.push(`Type: ${getSensorTypeLabel(filterSensorType.value)}`);
+  }
+  if (filterDetector.value) {
+    activeFilters.push(`Detector: ${getDetectorLabel(filterDetector.value)}`);
+  }
+  if (filterExpiresBefore.value) {
+    activeFilters.push(`Expires Before: ${filterExpiresBefore.value}`);
+  }
+  if (showDecommissionedSensors.value) {
+    activeFilters.push('Show Decommissioned: Yes');
+  }
+
+  if (activeFilters.length > 0) {
+    filterText += activeFilters.join(", ");
+    doc.text(filterText, 14, yPos);
+    yPos += 6; // Space after filter line
+  } else {
+    doc.text("Filters: None", 14, yPos);
+    yPos += 6; // Space after filter line
+  }
+  yPos += 4; // Additional space before the table
+
+  // Prepare table data
+  const tableData = filteredSensors.value.map(sensor => [
+    sensor.serial || 'N/A',
+    getSensorTypeLabel(sensor.sensor_type) || 'N/A',
+    getSensorTypeGas(sensor.sensor_type) || 'N/A',
+    getDetectorLabel(sensor.detector) || 'N/A',
+    getStatusDisplay(sensor.status),
+    sensor.order_date || 'N/A',
+    sensor.receive_date || 'N/A',
+    sensor.warranty_date || 'N/A',
+    sensor.expiry_date || 'N/A'
+  ]);
+
+  // Define table columns
+  const tableColumns = [
+    'Serial',
+    'Type',
+    'Gas',
+    'Detector',
+    'Status',
+    'Order Date',
+    'Receive Date',
+    'Warranty Date',
+    'Expiry Date'
+  ];
+
+  // Add table to PDF
+  autoTable(doc, {
+    head: [tableColumns],
+    body: tableData,
+    startY: yPos,
+    headStyles: {
+      fillColor: [66, 184, 131], // Green color matching the app
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: 'bold'
+    },
+    bodyStyles: {
+      fontSize: 7
+    },
+    alternateRowStyles: {
+      fillColor: [245, 245, 245]
+    },
+    margin: { top: 0, right: 5, bottom: 10, left: 5 },
+    styles: {
+      cellPadding: 3
+    },
+    columnStyles: {
+      0: { cellWidth: 18 }, // Serial
+      1: { cellWidth: 24 }, // Type (wider for full text)
+      2: { cellWidth: 15 }, // Gas
+      3: { cellWidth: 22 }, // Detector
+      4: { cellWidth: 18 }, // Status (wider for full text)
+      5: { cellWidth: 22 }, // Order Date (wider for full date string)
+      6: { cellWidth: 22 }, // Receive Date (wider for full date string)
+      7: { cellWidth: 22 }, // Warranty Date (wider for full date string)
+      8: { cellWidth: 22 }  // Expiry Date (wider for full date string)
+    }
+  });
+
+  // Add timestamp
+  const timestamp = new Date().toLocaleString();
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(10);
+    doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 40, doc.internal.pageSize.height - 10);
+    doc.text(`Generated: ${timestamp}`, 14, doc.internal.pageSize.height - 10);
+  }
+
+  // Save the PDF
+  doc.save('sensors-report.pdf');
+};
+</script>
+
+<style scoped>
+.sensors-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.filters-section {
+  margin-bottom: 0.5rem;
+  position: relative;
+  display: inline-block;
+}
+
+.filter-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #42b883;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filter-toggle-btn:hover {
+  background-color: #36966d;
+}
+
+.toggle-icon {
+  transition: transform 0.3s ease;
+}
+
+.filter-toggle-btn[aria-expanded="true"] .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.search-and-filters-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 20%;
+  min-width: 300px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.reset-btn-wrapper {
+  align-self: flex-start;
+}
+
+.search-input {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 200px;
+}
+
+.filter-select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-width: 150px;
+}
+
+.reset-btn {
+  padding: 0.5rem 1rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.reset-btn:hover {
+  background-color: #c82333;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 1rem auto;
+  padding: 0 2rem;
+  flex: 1;
+}
+
+h1 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary {
+  background-color: #42b883;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #36966d;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.table-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.sensors-table {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  table-layout: fixed;
+  margin-bottom: 0; /* Remove bottom margin since pagination is below */
+}
+
+.sensors-table thead th {
+  position: sticky; /* Make headers stick to the top */
+  top: 0;
+  background-color: #f8f9fa;
+  font-weight: 600;
+  word-wrap: break-word;
+  z-index: 10; /* Ensure headers stay above scrolled content */
+  border-bottom: 1px solid #ddd;
+}
+
+.sensors-table tbody {
+  display: block;
+  max-height: 60vh; /* Set a max height for scrolling */
+  overflow-y: auto;
+}
+
+.sensors-table thead,
+.sensors-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.sensors-table th,
+.sensors-table td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  word-wrap: break-word;
+}
+
+.sensors-table th:nth-child(1),
+.sensors-table td:nth-child(1) {
+  width: 4%; /* Checkbox */
+}
+
+.sensors-table th:nth-child(2),
+.sensors-table td:nth-child(2) {
+  width: 9%; /* Serial */
+}
+
+.sensors-table th:nth-child(3),
+.sensors-table td:nth-child(3) {
+  width: 11%; /* Sensor Type */
+}
+
+.sensors-table th:nth-child(4),
+.sensors-table td:nth-child(4) {
+  width: 9%; /* Gas Type */
+}
+
+.sensors-table th:nth-child(5),
+.sensors-table td:nth-child(5) {
+  width: 11%; /* Assigned to Detector */
+}
+
+.sensors-table th:nth-child(6),
+.sensors-table td:nth-child(6) {
+  width: 9%; /* Status */
+}
+
+.sensors-table th:nth-child(7),
+.sensors-table td:nth-child(7) {
+  width: 9%; /* Order Date */
+}
+
+.sensors-table th:nth-child(8),
+.sensors-table td:nth-child(8) {
+  width: 9%; /* Receive Date */
+}
+
+.sensors-table th:nth-child(9),
+.sensors-table td:nth-child(9) {
+  width: 9%; /* Warranty Date */
+}
+
+.sensors-table th:nth-child(10),
+.sensors-table td:nth-child(10) {
+  width: 9%; /* Expiry Date */
+}
+
+.sensors-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  position: relative;
+  word-wrap: break-word;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background-color: #e9ecef;
+}
+
+.sensors-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.sensor-link {
+  color: #42b883;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.sensor-link:hover {
+  text-decoration: underline;
+}
+
+.detector-link {
+  color: #42b883;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.detector-link:hover {
+  text-decoration: underline;
+}
+
+.loading, .no-data {
+  text-align: center;
+  padding: 2rem;
+  font-style: italic;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .filters-container {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .nav-links {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .search-and-filters {
+    order: 2;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .search-input, .filter-select {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .page-container {
+    padding: 0 1rem;
+    margin-top: 1rem;
+  }
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-button {
+  background-color: #2c3e50;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.dropdown-button:hover {
+  background-color: #34495e;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 4px;
+  top: 100%;
+  left: 0;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content a:hover {
+  background-color: #f1f1f1;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown:hover .dropdown-button {
+  background-color: #34495e;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.dialog-box {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+  z-index: 1001;
+}
+
+.dialog-box h3 {
+  margin-top: 0;
+  color: #2c3e50;
+  text-align: center;
+}
+
+.location-form {
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.location-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.location-form .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.location-form .form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.location-form .form-control:focus {
+  outline: none;
+  border-color: #42b883;
+  box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
+}
+
+.dialog-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.error-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+}
+
+.error-item {
+  margin: 0.25rem 0;
+  color: #721c24;
+  font-weight: 500;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.pagination-info {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination-controls .page-info {
+  color: #666;
+  font-size: 0.9rem;
+  min-width: 120px;
+  text-align: center;
+}
+
+.btn-pagination {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+.btn-pagination:disabled {
+  background-color: #adb5bd;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.date-filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.date-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.date-input {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #495057;
+}
+</style>
