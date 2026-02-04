@@ -93,7 +93,7 @@ const fetchSensorSlotDetails = async () => {
     // If route has sensorTypeId, we need to find the slot for this detector and sensor type
     if (route.params.sensorTypeId) {
       // Fetch all sensor slots for this detector
-      const slotsResponse = await fetch(`/inventory/sensorslots/?detector=${detectorId.value}`);
+      const slotsResponse = await fetch(`/api/inventory/sensorslots/?detector=${detectorId.value}`);
       if (!slotsResponse.ok) {
         throw new Error(`HTTP error! status: ${slotsResponse.status}`);
       }
@@ -120,7 +120,7 @@ const fetchSensorSlotDetails = async () => {
       slotData = foundSlotData;
     } else {
       // Fetch the sensor slot details using the slot ID (old route format)
-      const slotResponse = await fetch(`/inventory/sensorslots/${slotId.value}`);
+      const slotResponse = await fetch(`/api/inventory/sensorslots/${slotId.value}`);
       if (!slotResponse.ok) {
         throw new Error(`HTTP error! status: ${slotResponse.status}`);
       }
@@ -128,14 +128,14 @@ const fetchSensorSlotDetails = async () => {
     }
 
     // Fetch detector details
-    const detectorResponse = await fetch(`/inventory/detectors/${detectorId.value}/`);
+    const detectorResponse = await fetch(`/api/inventory/detectors/${detectorId.value}/`);
     if (detectorResponse.ok) {
       const detectorData = await detectorResponse.json();
       detectorLabel.value = detectorData.label;
     }
 
     // Fetch sensor type details
-    const sensorTypeResponse = await fetch(`/inventory/sensortypes/${slotData.sensor_type}/`);
+    const sensorTypeResponse = await fetch(`/api/inventory/sensortypes/${slotData.sensor_type}/`);
     if (sensorTypeResponse.ok) {
       const sensorTypeData = await sensorTypeResponse.json();
       sensorTypeLabel.value = sensorTypeData.part_number;
@@ -144,7 +144,7 @@ const fetchSensorSlotDetails = async () => {
 
     // Set current sensor if exists
     if (slotData.sensor) {
-      const sensorResponse = await fetch(`/inventory/sensors/${slotData.sensor}/`);
+      const sensorResponse = await fetch(`/api/inventory/sensors/${slotData.sensor}/`);
       if (sensorResponse.ok) {
         const sensorData = await sensorResponse.json();
         currentSensorLabel.value = sensorData.serial || 'N/A';
@@ -155,7 +155,7 @@ const fetchSensorSlotDetails = async () => {
     }
 
     // Fetch available sensors of the same type that are in stock
-    const sensorsResponse = await fetch(`/inventory/sensors/?sensor_type=${slotData.sensor_type}&status=IS`);
+    const sensorsResponse = await fetch(`/api/inventory/sensors/?sensor_type=${slotData.sensor_type}&status=IS`);
     if (sensorsResponse.ok) {
       availableSensors.value = await sensorsResponse.json();
     }
@@ -194,7 +194,7 @@ const saveSensorSlot = async () => {
       }
 
       // Update the sensor's detector and install date
-      const sensorResponse = await fetch(`/inventory/sensors/${selectedSensor.value}/`, {
+      const sensorResponse = await fetch(`/api/inventory/sensors/${selectedSensor.value}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'

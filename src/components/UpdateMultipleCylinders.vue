@@ -167,7 +167,7 @@ const updateMultipleCylinders = async () => {
       }
 
       // Send request and wait for response before proceeding to next
-      const response = await fetch(`/inventory/cylinders/${cylinderId}/`, {
+      const response = await fetch(`/api/inventory/cylinders/${cylinderId}/`, {
         method: 'PATCH',  // Using PATCH to update only specified fields
         headers: {
           'Content-Type': 'application/json'

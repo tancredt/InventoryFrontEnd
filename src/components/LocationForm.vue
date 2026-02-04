@@ -116,7 +116,7 @@ const errorMessages = ref([]);
 // Save location function
 const saveLocation = async () => {
   try {
-    const result = await post('/inventory/locations/', location.value);
+    const result = await post('/api/inventory/locations/', location.value);
 
     if (!result.ok) {
       const errorData = result.data;

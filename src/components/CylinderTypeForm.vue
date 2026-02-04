@@ -337,7 +337,7 @@ const saveCylinderType = async () => {
       cylinder_4_conc: cylinderType.value.cylinder_4_conc || null
     };
 
-    const response = await fetch('/inventory/cylindertypes/', {
+    const response = await fetch('/api/inventory/cylindertypes/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

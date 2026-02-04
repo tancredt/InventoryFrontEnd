@@ -210,7 +210,7 @@ let cancelRequested = false;
 // Fetch detector models from the API
 const fetchDetectorModels = async () => {
   try {
-    const response = await fetch('/inventory/detectormodels/');
+    const response = await fetch('/api/inventory/detectormodels/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -223,7 +223,7 @@ const fetchDetectorModels = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/inventory/locations/');
+    const response = await fetch('/api/inventory/locations/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -236,7 +236,7 @@ const fetchLocations = async () => {
 // Fetch detector model configurations from the API
 const fetchDetectorModelConfigurations = async () => {
   try {
-    const response = await fetch('/inventory/detectormodelconfigurations/');
+    const response = await fetch('/api/inventory/detectormodelconfigurations/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -344,7 +344,7 @@ const addMultipleDetectors = async () => {
       progressCount.value = `${i} of ${detectors.value.length} completed`;
 
       try {
-        const response = await fetch('/inventory/detectors/', {
+        const response = await fetch('/api/inventory/detectors/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

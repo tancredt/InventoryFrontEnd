@@ -105,7 +105,7 @@ const errorMessages = ref([]);
 // Fetch detector models from the API
 const fetchDetectorModels = async () => {
   try {
-    const result = await get('/inventory/detectormodels/');
+    const result = await get('/api/inventory/detectormodels/');
     if (!result.ok) {
       throw new Error(`HTTP error! status: ${result.status}`);
     }
@@ -125,7 +125,7 @@ const getModelName = (modelId) => {
 // Save configuration function
 const saveConfiguration = async () => {
   try {
-    const result = await post('/inventory/detectormodelconfigurations/', configuration.value);
+    const result = await post('/api/inventory/detectormodelconfigurations/', configuration.value);
 
     if (!result.ok) {
       const errorData = result.data;

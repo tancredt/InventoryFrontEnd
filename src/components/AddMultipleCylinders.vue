@@ -128,7 +128,7 @@ const successMessage = ref('');
 // Fetch cylinder types from the API
 const fetchCylinderTypes = async () => {
   try {
-    const response = await fetch('/inventory/cylindertypes/');
+    const response = await fetch('/api/inventory/cylindertypes/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -141,7 +141,7 @@ const fetchCylinderTypes = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/inventory/locations/');
+    const response = await fetch('/api/inventory/locations/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -224,7 +224,7 @@ const addMultipleCylinders = async () => {
       };
 
       // Send request and wait for response before proceeding to next
-      const response = await fetch('/inventory/cylinders/', {
+      const response = await fetch('/api/inventory/cylinders/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

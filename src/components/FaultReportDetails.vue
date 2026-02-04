@@ -185,7 +185,7 @@ const getLocationLabel = (locationId) => {
 const fetchChoices = async () => {
   try {
     // Fetch fault type choices directly
-    const response = await fetch('/inventory/detector-fault-types/');
+    const response = await fetch('/api/inventory/detector-fault-types/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -201,7 +201,7 @@ const fetchFaultReport = async () => {
   // Only fetch if we're editing an existing fault report (not creating a new one)
   if (route.params.faultId && route.params.faultId !== 'new') {
     try {
-      const response = await fetch(`/inventory/detectorfaults/${route.params.faultId}/`);
+      const response = await fetch(`/api/inventory/detectorfaults/${route.params.faultId}/`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -221,7 +221,7 @@ const fetchFaultReport = async () => {
 // Fetch detector details
 const fetchDetectorDetails = async () => {
   try {
-    const response = await fetch(`/inventory/detectors/${detectorId.value}/`);
+    const response = await fetch(`/api/inventory/detectors/${detectorId.value}/`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -274,7 +274,7 @@ const saveFaultReport = async () => {
 
     if (isNewFault.value) {
       // Creating a new fault report
-      response = await fetch('/inventory/detectorfaults/', {
+      response = await fetch('/api/inventory/detectorfaults/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -286,7 +286,7 @@ const saveFaultReport = async () => {
       });
     } else {
       // Updating an existing fault report
-      response = await fetch(`/inventory/detectorfaults/${route.params.faultId}/`, {
+      response = await fetch(`/api/inventory/detectorfaults/${route.params.faultId}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -376,7 +376,7 @@ onMounted(async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/inventory/locations/');
+    const response = await fetch('/api/inventory/locations/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

@@ -222,7 +222,7 @@ watch([sortKey, sortDirection, searchTerm, filterStatus, filterMaintenanceType, 
 // Fetch detectors from the API
 const fetchDetectors = async () => {
   try {
-    const response = await fetch('/inventory/detectors/');
+    const response = await fetch('/api/inventory/detectors/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -267,7 +267,7 @@ const fetchMaintenances = async () => {
     }
 
     // Fetch maintenances from the Django REST API
-    const response = await fetch(url);
+    const response = await fetch(url.replace('/inventory/', '/api/inventory/'));
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

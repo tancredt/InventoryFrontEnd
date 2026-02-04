@@ -198,7 +198,7 @@ const isNewSensor = computed(() => route.params.id === 'new');
 // Fetch sensor types from the API
 const fetchSensorTypes = async () => {
   try {
-    const response = await fetch('/inventory/sensortypes/');
+    const response = await fetch('/api/inventory/sensortypes/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -212,7 +212,7 @@ const fetchSensorTypes = async () => {
 // Fetch sensor data if editing existing sensor
 const fetchSensor = async () => {
   try {
-    const response = await fetch(`/inventory/sensors/${route.params.id}/`);
+    const response = await fetch(`/api/inventory/sensors/${route.params.id}/`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -288,7 +288,7 @@ const saveSensor = async () => {
       sensorData.detector = null;
 
       // Creating a new sensor
-      response = await fetch('/inventory/sensors/', {
+      response = await fetch('/api/inventory/sensors/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -300,7 +300,7 @@ const saveSensor = async () => {
       delete sensorData.detector;
 
       // Updating an existing sensor
-      response = await fetch(`/inventory/sensors/${route.params.id}/`, {
+      response = await fetch(`/api/inventory/sensors/${route.params.id}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

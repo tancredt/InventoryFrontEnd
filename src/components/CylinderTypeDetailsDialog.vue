@@ -85,7 +85,7 @@ const fetchCylinderTypes = async () => {
   try {
     loading.value = true;
     
-    const response = await fetch('/inventory/cylindertypes/');
+    const response = await fetch('/api/inventory/cylindertypes/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

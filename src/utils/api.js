@@ -20,9 +20,15 @@ const getCsrfTokenFromCookie = () => {
 
 // Main API function that handles CSRF tokens
 export const apiCall = async (url, options = {}) => {
+  // Prepend /api to inventory URLs if not already present
+  let apiUrl = url;
+  if (url.startsWith('/inventory/') && !url.startsWith('/api/')) {
+    apiUrl = url.replace('/inventory/', '/api/inventory/');
+  }
+
   // Get the CSRF token
   const csrfToken = getCsrfTokenFromCookie();
-  
+
   // Set default options
   const defaultOptions = {
     credentials: 'include', // Important for session cookies
@@ -31,7 +37,7 @@ export const apiCall = async (url, options = {}) => {
       ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}), // Include CSRF token if available
     }
   };
-  
+
   // Merge user options with defaults
   const mergedOptions = {
     ...defaultOptions,
@@ -41,14 +47,14 @@ export const apiCall = async (url, options = {}) => {
       ...options.headers
     }
   };
-  
+
   // If the method is not GET, HEAD, OPTIONS, or TRACE, we definitely need CSRF
   const dangerousMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
   if (dangerousMethods.includes(options.method?.toUpperCase()) && !csrfToken) {
     console.warn('CSRF token not found but required for this request');
   }
-  
-  const response = await fetch(url, mergedOptions);
+
+  const response = await fetch(apiUrl, mergedOptions);
   
   // If the response is JSON, parse it
   const contentType = response.headers.get('content-type');

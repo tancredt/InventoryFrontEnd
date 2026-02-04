@@ -167,13 +167,13 @@ const isComplete = computed(() => {
 const fetchChoices = async () => {
   try {
     // Fetch maintenance type choices
-    const maintenanceTypeResponse = await fetch('/inventory/maintenance-types/');
+    const maintenanceTypeResponse = await fetch('/api/inventory/maintenance-types/');
     if (maintenanceTypeResponse.ok) {
       maintenanceTypeChoices.value = await maintenanceTypeResponse.json();
     }
     
     // Fetch maintenance status choices
-    const maintenanceStatusResponse = await fetch('/inventory/maintenance-statuses/');
+    const maintenanceStatusResponse = await fetch('/api/inventory/maintenance-statuses/');
     if (maintenanceStatusResponse.ok) {
       maintenanceStatusChoices.value = await maintenanceStatusResponse.json();
     }
@@ -188,7 +188,7 @@ const fetchMaintenance = async () => {
   // Only fetch if we're editing an existing maintenance (not creating a new one)
   if (route.params.maintenanceId && route.params.maintenanceId !== 'new') {
     try {
-      const response = await fetch(`/inventory/maintenances/${route.params.maintenanceId}/`);
+      const response = await fetch(`/api/inventory/maintenances/${route.params.maintenanceId}/`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -208,7 +208,7 @@ const fetchMaintenance = async () => {
 // Fetch detector details
 const fetchDetectorDetails = async () => {
   try {
-    const response = await fetch(`/inventory/detectors/${detectorId.value}/`);
+    const response = await fetch(`/api/inventory/detectors/${detectorId.value}/`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -277,7 +277,7 @@ const performSave = async () => {
     let response;
     if (isNewMaintenance.value) {
       // Creating a new maintenance
-      response = await fetch('/inventory/maintenances/', {
+      response = await fetch('/api/inventory/maintenances/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -286,7 +286,7 @@ const performSave = async () => {
       });
     } else {
       // Updating an existing maintenance
-      response = await fetch(`/inventory/maintenances/${route.params.maintenanceId}/`, {
+      response = await fetch(`/api/inventory/maintenances/${route.params.maintenanceId}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

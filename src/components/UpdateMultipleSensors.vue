@@ -217,7 +217,7 @@ const updateMultipleSensors = async () => {
       }
 
       // Send request and wait for response before proceeding to next
-      const response = await fetch(`/inventory/sensors/${sensorId}/`, {
+      const response = await fetch(`/api/inventory/sensors/${sensorId}/`, {
         method: 'PATCH',  // Using PATCH to update only specified fields
         headers: {
           'Content-Type': 'application/json'

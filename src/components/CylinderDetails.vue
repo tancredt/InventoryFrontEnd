@@ -203,7 +203,7 @@ const isNewCylinder = computed(() => route.params.id === 'new');
 // Fetch cylinder types from the API
 const fetchCylinderTypes = async () => {
   try {
-    const response = await fetch('/inventory/cylindertypes/');
+    const response = await fetch('/api/inventory/cylindertypes/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -216,7 +216,7 @@ const fetchCylinderTypes = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/inventory/locations/');
+    const response = await fetch('/api/inventory/locations/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -229,7 +229,7 @@ const fetchLocations = async () => {
 // Fetch cylinder data if editing existing cylinder
 const fetchCylinder = async () => {
   try {
-    const response = await fetch(`/inventory/cylinders/${route.params.id}/`);
+    const response = await fetch(`/api/inventory/cylinders/${route.params.id}/`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -312,7 +312,7 @@ const saveCylinder = async () => {
 
     if (isNewCylinder.value) {
       // Creating a new cylinder
-      response = await fetch('/inventory/cylinders/', {
+      response = await fetch('/api/inventory/cylinders/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -321,7 +321,7 @@ const saveCylinder = async () => {
       });
     } else {
       // Updating an existing cylinder
-      response = await fetch(`/inventory/cylinders/${route.params.id}/`, {
+      response = await fetch(`/api/inventory/cylinders/${route.params.id}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

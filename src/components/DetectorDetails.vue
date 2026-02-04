@@ -637,7 +637,7 @@ const saveDetector = async () => {
 
     if (isNewDetector.value) {
       // Creating a new detector
-      response = await fetch('/inventory/detectors/', {
+      response = await fetch('/api/inventory/detectors/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -646,7 +646,7 @@ const saveDetector = async () => {
       });
     } else {
       // Updating an existing detector
-      response = await fetch(`/inventory/detectors/${route.params.id}/`, {
+      response = await fetch(`/api/inventory/detectors/${route.params.id}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -691,7 +691,7 @@ const saveDetector = async () => {
 // Fetch detector data if editing existing detector
 const fetchDetector = async () => {
   try {
-    const response = await fetch(`/inventory/detectors/${route.params.id}/`);
+    const response = await fetch(`/api/inventory/detectors/${route.params.id}/`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -722,26 +722,26 @@ const fetchDetector = async () => {
 const fetchRelatedData = async () => {
   try {
     // Fetch sensor slots for this detector
-    const slotsResponse = await fetch(`/inventory/sensorslots/?detector=${route.params.id}`);
+    const slotsResponse = await fetch(`/api/inventory/sensorslots/?detector=${route.params.id}`);
     if (slotsResponse.ok) {
       detectorSensorSlots.value = await slotsResponse.json();
       console.log(detectorSensorSlots.value)
     }
 
     // Fetch sensors for this detector (for detailed sensor info in slots)
-    const sensorsResponse = await fetch(`/inventory/sensors/?detector=${route.params.id}`);
+    const sensorsResponse = await fetch(`/api/inventory/sensors/?detector=${route.params.id}`);
     if (sensorsResponse.ok) {
       detectorSensors.value = await sensorsResponse.json();
     }
 
     // Fetch faults for this detector
-    const faultsResponse = await fetch(`/inventory/detectorfaults/?detector=${route.params.id}`);
+    const faultsResponse = await fetch(`/api/inventory/detectorfaults/?detector=${route.params.id}`);
     if (faultsResponse.ok) {
       detectorFaults.value = await faultsResponse.json();
     }
 
     // Fetch maintenance for this detector
-    const maintenanceResponse = await fetch(`/inventory/maintenances/?detector=${route.params.id}`);
+    const maintenanceResponse = await fetch(`/api/inventory/maintenances/?detector=${route.params.id}`);
     if (maintenanceResponse.ok) {
       detectorMaintenance.value = await maintenanceResponse.json();
     }
@@ -832,7 +832,7 @@ onMounted(async () => {
 // Fetch detector models from the API
 const fetchDetectorModels = async () => {
   try {
-    const response = await fetch('/inventory/detectormodels/');
+    const response = await fetch('/api/inventory/detectormodels/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -845,7 +845,7 @@ const fetchDetectorModels = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/inventory/locations/');
+    const response = await fetch('/api/inventory/locations/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -858,7 +858,7 @@ const fetchLocations = async () => {
 // Fetch sensor types from the API
 const fetchSensorTypes = async () => {
   try {
-    const response = await fetch('/inventory/sensortypes/');
+    const response = await fetch('/api/inventory/sensortypes/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -871,7 +871,7 @@ const fetchSensorTypes = async () => {
 // Fetch detector model configurations from the API
 const fetchDetectorModelConfigurations = async () => {
   try {
-    const response = await fetch('/inventory/detectormodelconfigurations/');
+    const response = await fetch('/api/inventory/detectormodelconfigurations/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

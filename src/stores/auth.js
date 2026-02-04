@@ -14,7 +14,7 @@ const getCsrfToken = async () => {
 
   // If not found in cookie, try to get it from the Django API
   try {
-    const response = await fetch('/inventory/csrf-token/', {
+    const response = await fetch('/api/inventory/csrf-token/', {
       method: 'GET',
       credentials: 'include'
     });
@@ -41,7 +41,7 @@ export const useAuthStore = defineStore('auth', () => {
   const checkAuth = async () => {
     loading.value = true;
     try {
-      const response = await fetch('/inventory/auth/current-user/', {
+      const response = await fetch('/api/inventory/auth/current-user/', {
         credentials: 'include'  // Important for session cookies
       });
 
@@ -69,7 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const csrfToken = await getCsrfToken();
 
-      const response = await fetch('/inventory/auth/login/', {
+      const response = await fetch('/api/inventory/auth/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const csrfToken = await getCsrfToken();
 
-      const response = await fetch('/inventory/auth/logout/', {
+      const response = await fetch('/api/inventory/auth/logout/', {
         method: 'POST',
         headers: {
           'X-CSRFToken': csrfToken || '',  // Include CSRF token in header

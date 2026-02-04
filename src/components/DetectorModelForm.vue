@@ -114,19 +114,19 @@ const supplierChoices = ref([]);
 const fetchChoices = async () => {
   try {
     // Fetch manufacturer choices
-    const manufacturerResult = await get('/inventory/manufacturers/');
+    const manufacturerResult = await get('/api/inventory/manufacturers/');
     if (manufacturerResult.ok) {
       manufacturerChoices.value = manufacturerResult.data;
     }
 
     // Fetch detector type choices
-    const detectorTypeResult = await get('/inventory/detector-types/');
+    const detectorTypeResult = await get('/api/inventory/detector-types/');
     if (detectorTypeResult.ok) {
       detectorTypeChoices.value = detectorTypeResult.data;
     }
 
     // Fetch supplier choices
-    const supplierResult = await get('/inventory/suppliers/');
+    const supplierResult = await get('/api/inventory/suppliers/');
     if (supplierResult.ok) {
       supplierChoices.value = supplierResult.data;
     }
@@ -138,7 +138,7 @@ const fetchChoices = async () => {
 // Save detector model function
 const saveDetectorModel = async () => {
   try {
-    const result = await post('/inventory/detectormodels/', detectorModel.value);
+    const result = await post('/api/inventory/detectormodels/', detectorModel.value);
 
     if (!result.ok) {
       throw new Error(`HTTP error! status: ${result.status}`);

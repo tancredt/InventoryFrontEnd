@@ -159,7 +159,7 @@ const saveSensorType = async () => {
       expiry_months: sensorType.value.expiry_months || null
     };
 
-    const response = await fetch('/inventory/sensortypes/', {
+    const response = await fetch('/api/inventory/sensortypes/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

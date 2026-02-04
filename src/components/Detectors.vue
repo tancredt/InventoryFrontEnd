@@ -242,7 +242,7 @@ watch([sortKey, sortDirection, searchTerm, filterStatus, filterLocation, filterM
 // Fetch detector models from the API
 const fetchDetectorModels = async () => {
   try {
-    const result = await get('/inventory/detectormodels/');
+    const result = await get('/api/inventory/detectormodels/');
     if (!result.ok) {
       throw new Error(`HTTP error! status: ${result.status}`);
     }
@@ -255,7 +255,7 @@ const fetchDetectorModels = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const result = await get('/inventory/locations/');
+    const result = await get('/api/inventory/locations/');
     if (!result.ok) {
       throw new Error(`HTTP error! status: ${result.status}`);
     }
@@ -268,7 +268,7 @@ const fetchLocations = async () => {
 // Fetch detector model configurations from the API
 const fetchDetectorModelConfigurations = async () => {
   try {
-    const result = await get('/inventory/detectormodelconfigurations/');
+    const result = await get('/api/inventory/detectormodelconfigurations/');
     if (!result.ok) {
       throw new Error(`HTTP error! status: ${result.status}`);
     }
@@ -287,7 +287,7 @@ const fetchDetectors = async () => {
     loading.value = true;
 
     // Fetch detectors from the Django REST API
-    const result = await get('/inventory/detectors/');
+    const result = await get('/api/inventory/detectors/');
 
     if (!result.ok) {
       throw new Error(`HTTP error! status: ${result.status}`);

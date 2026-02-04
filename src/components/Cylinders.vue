@@ -309,7 +309,7 @@ watch([sortKey, sortDirection, searchTerm, filterStatus, filterLocation, filterD
 // Fetch cylinder types from the API
 const fetchCylinderTypes = async () => {
   try {
-    const response = await fetch('/inventory/cylindertypes/');
+    const response = await fetch('/api/inventory/cylindertypes/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -322,7 +322,7 @@ const fetchCylinderTypes = async () => {
 // Fetch detectors from the API
 const fetchDetectors = async () => {
   try {
-    const response = await fetch('/inventory/detectors/');
+    const response = await fetch('/api/inventory/detectors/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -335,7 +335,7 @@ const fetchDetectors = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/inventory/locations/');
+    const response = await fetch('/api/inventory/locations/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -390,7 +390,7 @@ const fetchCylinders = async () => {
     }
 
     // Fetch cylinders from the Django REST API
-    const response = await fetch(url);
+    const response = await fetch(url.replace('/inventory/', '/api/inventory/'));
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

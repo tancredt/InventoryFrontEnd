@@ -116,7 +116,7 @@ const successMessage = ref('');
 // Fetch sensor types from the API
 const fetchSensorTypes = async () => {
   try {
-    const response = await fetch('/inventory/sensortypes/');
+    const response = await fetch('/api/inventory/sensortypes/');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -191,7 +191,7 @@ const addMultipleSensors = async () => {
       };
 
       // Send request and wait for response before proceeding to next
-      const response = await fetch('/inventory/sensors/', {
+      const response = await fetch('/api/inventory/sensors/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
