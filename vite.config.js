@@ -17,8 +17,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/inventory': {
-        target: 'http://127.0.0.1:8000',
+      '/api/': {
+        target: 'http://localhost',  // Points to nginx running on default port
         changeOrigin: true,
         secure: false,
       }
