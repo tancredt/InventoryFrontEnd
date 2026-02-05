@@ -161,6 +161,37 @@ import { useRouter, useRoute } from 'vue-router';
 const router = useRouter();
 const route = useRoute();
 
+// Helper function to get CSRF token
+const getCsrfToken = async () => {
+  // Try to get the CSRF token from cookie first
+  const cookies = document.cookie.split(';');
+  for (let i = 0; i < cookies.length; i++) {
+    const cookie = cookies[i].trim();
+    if (cookie.startsWith('csrftoken=')) {
+      return cookie.substring('csrftoken='.length, cookie.length);
+    }
+  }
+
+  // If not found in cookie, try to get it from the Django API
+  try {
+    const response = await fetch('/api/inventory/csrf-token/', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // Set the cookie for future requests
+      document.cookie = `csrftoken=${data.csrfToken}; path=/; SameSite=Strict`;
+      return data.csrfToken;
+    }
+  } catch (error) {
+    console.warn('Could not fetch CSRF token from API:', error);
+  }
+
+  return null;
+};
+
 // State for related data
 const sensorTypes = ref([]);
 
@@ -287,24 +318,34 @@ const saveSensor = async () => {
       // When creating a new sensor, explicitly set detector to null
       sensorData.detector = null;
 
+      // Get CSRF token
+      const csrfToken = await getCsrfToken();
+
       // Creating a new sensor
       response = await fetch('/api/inventory/sensors/', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
         },
+        credentials: 'include',  // Important for session cookies
         body: JSON.stringify(sensorData)
       });
     } else {
       // When updating an existing sensor, remove the detector field to leave it unchanged
       delete sensorData.detector;
 
+      // Get CSRF token
+      const csrfToken = await getCsrfToken();
+
       // Updating an existing sensor
       response = await fetch(`/api/inventory/sensors/${route.params.id}/`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
         },
+        credentials: 'include',  // Important for session cookies
         body: JSON.stringify(sensorData)
       });
     }

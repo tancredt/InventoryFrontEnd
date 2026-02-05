@@ -105,6 +105,37 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
+// Helper function to get CSRF token
+const getCsrfToken = async () => {
+  // Try to get the CSRF token from cookie first
+  const cookies = document.cookie.split(';');
+  for (let i = 0; i < cookies.length; i++) {
+    const cookie = cookies[i].trim();
+    if (cookie.startsWith('csrftoken=')) {
+      return cookie.substring('csrftoken='.length, cookie.length);
+    }
+  }
+
+  // If not found in cookie, try to get it from the Django API
+  try {
+    const response = await fetch('/api/inventory/csrf-token/', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // Set the cookie for future requests
+      document.cookie = `csrftoken=${data.csrfToken}; path=/; SameSite=Strict`;
+      return data.csrfToken;
+    }
+  } catch (error) {
+    console.warn('Could not fetch CSRF token from API:', error);
+  }
+
+  return null;
+};
+
 // State for related data
 const cylinderTypes = ref([]);
 const locations = ref([]);
@@ -223,12 +254,17 @@ const addMultipleCylinders = async () => {
         serial: null  // Serial can be null initially
       };
 
+      // Get CSRF token
+      const csrfToken = await getCsrfToken();
+
       // Send request and wait for response before proceeding to next
       const response = await fetch('/api/inventory/cylinders/', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
         },
+        credentials: 'include',  // Important for session cookies
         body: JSON.stringify(cylinderData)
       });
 
