@@ -43,6 +43,20 @@
             </div>
 
             <div class="form-group">
+              <label for="station">Station</label>
+              <input
+                type="text"
+                id="station"
+                v-model="location.station"
+                maxlength="32"
+                class="form-control"
+                placeholder="Enter station name"
+              >
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
               <label for="priority">Priority</label>
               <input
                 type="number"
@@ -52,6 +66,10 @@
                 class="form-control"
                 placeholder="Enter priority (higher numbers have higher priority)"
               >
+            </div>
+
+            <div class="form-group">
+              <!-- Empty space to maintain layout -->
             </div>
           </div>
 
@@ -103,6 +121,7 @@ const location = ref({
   label: '',
   address: '',
   location_type: 'ST', // Default to Station
+  station: '',
   priority: 1
 });
 
