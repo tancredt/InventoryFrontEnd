@@ -103,6 +103,23 @@
                 </div>
               </div>
 
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="firmware">Firmware</label>
+                  <input
+                    type="text"
+                    id="firmware"
+                    v-model="detector.firmware"
+                    maxlength="8"
+                    class="form-control"
+                  >
+                </div>
+
+                <div class="form-group">
+                  <!-- Empty space to maintain layout -->
+                </div>
+              </div>
+
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary" :disabled="!isDirty">Save Detector</button>
                 <router-link to="/detectors" class="btn btn-secondary">Cancel</router-link>
@@ -337,6 +354,7 @@ const detector = ref({
   configuration: null,  // Changed to null to represent ID reference
   location: null,
   detector_model: null,
+  firmware: null,
   purchase_date: '',
   purchase_cost: null
 });
@@ -662,6 +680,7 @@ const saveDetector = async () => {
       detector_model: detector.value.detector_model ? parseInt(detector.value.detector_model) : null,
       location: detector.value.location ? parseInt(detector.value.location) : null,
       configuration: detector.value.configuration ? parseInt(detector.value.configuration) : null,
+      firmware: detector.value.firmware || null,  // Convert empty string to null
       purchase_date: detector.value.purchase_date || null,  // Convert empty string to null
       purchase_cost: detector.value.purchase_cost ? parseFloat(detector.value.purchase_cost) : null
     };
@@ -738,7 +757,8 @@ const fetchDetector = async () => {
       ...data,
       detector_model: data.detector_model || null,
       location: data.location || null,
-      configuration: data.configuration || null
+      configuration: data.configuration || null,
+      firmware: data.firmware || null
     };
 
     // Store original detector data for dirty checking
@@ -746,7 +766,8 @@ const fetchDetector = async () => {
       ...data,
       detector_model: data.detector_model || null,
       location: data.location || null,
-      configuration: data.configuration || null
+      configuration: data.configuration || null,
+      firmware: data.firmware || null
     };
 
     // Reset isDirty since we just loaded the data
@@ -826,6 +847,7 @@ const checkIfDirty = () => {
          detector.value.configuration !== originalDetector.value.configuration ||
          detector.value.location !== originalDetector.value.location ||
          detector.value.detector_model !== originalDetector.value.detector_model ||
+         detector.value.firmware !== originalDetector.value.firmware ||
          detector.value.purchase_date !== originalDetector.value.purchase_date ||
          detector.value.purchase_cost !== originalDetector.value.purchase_cost;
 };
@@ -857,6 +879,7 @@ onMounted(async () => {
       configuration: null,
       location: null,
       detector_model: null,
+      firmware: null,
       purchase_date: '',
       purchase_cost: null
     };

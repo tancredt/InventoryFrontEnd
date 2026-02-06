@@ -99,6 +99,9 @@
               <th @click="sortBy('configuration')" class="sortable">
                 Configuration <span v-if="sortKey === 'configuration'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
               </th>
+              <th @click="sortBy('firmware')" class="sortable">
+                Firmware <span v-if="sortKey === 'firmware'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
               <th @click="sortBy('purchase_date')" class="sortable">
                 Purchase Date <span v-if="sortKey === 'purchase_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
               </th>
@@ -116,6 +119,7 @@
               <td>{{ getLocationLabel(detector.location) || 'N/A' }}</td>
               <td>{{ getStatusDisplay(detector.status) }}</td>
               <td>{{ getConfigurationDisplay(detector.configuration) || 'N/A' }}</td>
+              <td>{{ detector.firmware || 'N/A' }}</td>
               <td>{{ detector.purchase_date || 'N/A' }}</td>
             </tr>
           </tbody>
@@ -617,6 +621,8 @@ const downloadPDF = async () => {
     getDetectorModelManufacturer(detector.detector_model) || 'N/A',
     getLocationLabel(detector.location) || 'N/A',
     getStatusDisplay(detector.status),
+    getConfigurationDisplay(detector.configuration) || 'N/A',
+    detector.firmware || 'N/A',
     detector.purchase_date || 'N/A',
     detector.operational_date || 'N/A',
     detector.end_date || 'N/A'
@@ -630,6 +636,8 @@ const downloadPDF = async () => {
     'Manufacturer',
     'Location',
     'Status',
+    'Configuration',
+    'Firmware',
     'Purchase Date',
     'Operational Date',
     'End Date'
@@ -663,9 +671,11 @@ const downloadPDF = async () => {
       3: { cellWidth: 20 }, // Manufacturer
       4: { cellWidth: 25 }, // Location
       5: { cellWidth: 15 }, // Status
-      6: { cellWidth: 20 }, // Purchase Date
-      7: { cellWidth: 20 }, // Operational Date
-      8: { cellWidth: 20 }  // End Date
+      6: { cellWidth: 20 }, // Configuration
+      7: { cellWidth: 15 }, // Firmware
+      8: { cellWidth: 20 }, // Purchase Date
+      9: { cellWidth: 20 }, // Operational Date
+      10: { cellWidth: 20 }  // End Date
     }
   });
 
@@ -899,11 +909,16 @@ h1 {
 
 .detectors-table th:nth-child(6),
 .detectors-table td:nth-child(6) {
-  width: 18%; /* Configuration */
+  width: 15%; /* Configuration */
 }
 
 .detectors-table th:nth-child(7),
 .detectors-table td:nth-child(7) {
+  width: 10%; /* Firmware */
+}
+
+.detectors-table th:nth-child(8),
+.detectors-table td:nth-child(8) {
   width: 15%; /* Purchase Date */
 }
 
