@@ -272,11 +272,6 @@ import { useRouter } from 'vue-router';
 import { post } from '@/utils/api.js';
 
 const router = useRouter();
-    console.warn('Could not fetch CSRF token from API:', error);
-  }
-
-  return null;
-};
 
 // State for the cylinder type
 const cylinderType = ref({
