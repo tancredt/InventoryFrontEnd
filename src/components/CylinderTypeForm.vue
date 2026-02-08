@@ -269,34 +269,9 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { post } from '@/utils/api.js';
 
 const router = useRouter();
-
-// Helper function to get CSRF token
-const getCsrfToken = async () => {
-  // Try to get the CSRF token from cookie first
-  const cookies = document.cookie.split(';');
-  for (let i = 0; i < cookies.length; i++) {
-    const cookie = cookies[i].trim();
-    if (cookie.startsWith('csrftoken=')) {
-      return cookie.substring('csrftoken='.length, cookie.length);
-    }
-  }
-
-  // If not found in cookie, try to get it from the Django API
-  try {
-    const response = await fetch('/api/inventory/csrf-token/', {
-      method: 'GET',
-      credentials: 'include'
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      // Set the cookie for future requests
-      document.cookie = `csrftoken=${data.csrfToken}; path=/; SameSite=Strict`;
-      return data.csrfToken;
-    }
-  } catch (error) {
     console.warn('Could not fetch CSRF token from API:', error);
   }
 
@@ -368,33 +343,26 @@ const saveCylinderType = async () => {
       cylinder_4_conc: cylinderType.value.cylinder_4_conc || null
     };
 
-    // Get CSRF token
-    const csrfToken = await getCsrfToken();
+    const result = await post('/api/inventory/cylindertypes/', cylinderTypeData);
 
-    const response = await fetch('/api/inventory/cylindertypes/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-      },
-      credentials: 'include',  // Important for session cookies
-      body: JSON.stringify(cylinderTypeData)
-    });
-
-    if (!response.ok) {
-      // Handle validation errors
-      if (response.status === 400) {
-        const errorData = await response.json();
+    if (!result.ok) {
+      if (result.status === 400) {
+        const errorData = result.data;
         errorMessages.value = [];
 
         for (const [field, errors] of Object.entries(errorData)) {
-          errorMessages.value.push(`${field}: ${errors.join(', ')}`);
+          if (Array.isArray(errors)) {
+            errorMessages.value.push(`${field}: ${errors.join(', ')}`);
+          } else {
+            // Handle cases where errors is not an array
+            errorMessages.value.push(`${field}: ${errors}`);
+          }
         }
 
         showErrorDialog.value = true;
         return; // Don't proceed with success dialog
       } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${result.status}`);
       }
     }
 

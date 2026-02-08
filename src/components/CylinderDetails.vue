@@ -158,41 +158,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { post, put } from '@/utils/api.js';
 import CylinderTypeDetailsDialog from './CylinderTypeDetailsDialog.vue';
 
 const router = useRouter();
 const route = useRoute();
-
-// Helper function to get CSRF token
-const getCsrfToken = async () => {
-  // Try to get the CSRF token from cookie first
-  const cookies = document.cookie.split(';');
-  for (let i = 0; i < cookies.length; i++) {
-    const cookie = cookies[i].trim();
-    if (cookie.startsWith('csrftoken=')) {
-      return cookie.substring('csrftoken='.length, cookie.length);
-    }
-  }
-
-  // If not found in cookie, try to get it from the Django API
-  try {
-    const response = await fetch('/api/inventory/csrf-token/', {
-      method: 'GET',
-      credentials: 'include'
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      // Set the cookie for future requests
-      document.cookie = `csrftoken=${data.csrfToken}; path=/; SameSite=Strict`;
-      return data.csrfToken;
-    }
-  } catch (error) {
-    console.warn('Could not fetch CSRF token from API:', error);
-  }
-
-  return null;
-};
 
 // State for related data
 const cylinderTypes = ref([]);
@@ -328,7 +298,6 @@ const saveCylinder = async () => {
       return;
     }
 
-    let response;
     // Prepare the cylinder data with proper data types
     const cylinderData = {
       ...cylinder.value,
@@ -341,47 +310,34 @@ const saveCylinder = async () => {
       empty_date: cylinder.value.empty_date || null
     };
 
-    // Get CSRF token
-    const csrfToken = await getCsrfToken();
-
+    let result;
     if (isNewCylinder.value) {
       // Creating a new cylinder
-      response = await fetch('/api/inventory/cylinders/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(cylinderData)
-      });
+      result = await post('/api/inventory/cylinders/', cylinderData);
     } else {
       // Updating an existing cylinder
-      response = await fetch(`/api/inventory/cylinders/${route.params.id}/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(cylinderData)
-      });
+      result = await put(`/api/inventory/cylinders/${route.params.id}/`, cylinderData);
     }
 
-    if (!response.ok) {
+    if (!result.ok) {
       // Handle validation errors
-      if (response.status === 400) {
-        const errorData = await response.json();
+      if (result.status === 400) {
+        const errorData = result.data;
         errorMessages.value = [];
 
         for (const [field, errors] of Object.entries(errorData)) {
-          errorMessages.value.push(`${field}: ${errors.join(', ')}`);
+          if (Array.isArray(errors)) {
+            errorMessages.value.push(`${field}: ${errors.join(', ')}`);
+          } else {
+            // Handle cases where errors is not an array
+            errorMessages.value.push(`${field}: ${errors}`);
+          }
         }
 
         showErrorDialog.value = true;
         return; // Don't proceed with success dialog
       } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${result.status}`);
       }
     }
 

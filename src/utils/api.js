@@ -18,6 +18,38 @@ const getCsrfTokenFromCookie = () => {
   return cookieValue;
 };
 
+// Async helper function to get CSRF token from API if not in cookie
+const getCsrfTokenFromApi = async () => {
+  try {
+    const response = await fetch('/api/inventory/csrf-token/', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // Set the cookie for future requests
+      document.cookie = `csrftoken=${data.csrfToken}; path=/; SameSite=Strict`;
+      return data.csrfToken;
+    }
+  } catch (error) {
+    console.warn('Could not fetch CSRF token from API:', error);
+  }
+
+  return null;
+};
+
+// Async function to get CSRF token (from cookie or API)
+const getCsrfToken = async () => {
+  const tokenFromCookie = getCsrfTokenFromCookie();
+  if (tokenFromCookie) {
+    return tokenFromCookie;
+  }
+  
+  // If not in cookie, try to get from API
+  return await getCsrfTokenFromApi();
+};
+
 // Main API function that handles CSRF tokens
 export const apiCall = async (url, options = {}) => {
   // Prepend /api to inventory URLs if not already present
@@ -26,8 +58,14 @@ export const apiCall = async (url, options = {}) => {
     apiUrl = url.replace('/inventory/', '/api/inventory/');
   }
 
-  // Get the CSRF token
-  const csrfToken = getCsrfTokenFromCookie();
+  // Get the CSRF token asynchronously
+  let csrfToken = null;
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method?.toUpperCase())) {
+    csrfToken = await getCsrfToken();
+  } else {
+    // For non-dangerous methods, just check cookie
+    csrfToken = getCsrfTokenFromCookie();
+  }
 
   // Set default options
   const defaultOptions = {
@@ -48,14 +86,14 @@ export const apiCall = async (url, options = {}) => {
     }
   };
 
-  // If the method is not GET, HEAD, OPTIONS, or TRACE, we definitely need CSRF
+  // If the method is dangerous and we still don't have a CSRF token, warn
   const dangerousMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
   if (dangerousMethods.includes(options.method?.toUpperCase()) && !csrfToken) {
     console.warn('CSRF token not found but required for this request');
   }
 
   const response = await fetch(apiUrl, mergedOptions);
-  
+
   // If the response is JSON, parse it
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {

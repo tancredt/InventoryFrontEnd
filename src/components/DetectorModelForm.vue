@@ -83,6 +83,21 @@
         </div>
       </div>
     </div>
+
+    <!-- Error Dialog -->
+    <div v-if="showErrorDialog" class="dialog-overlay" @click="closeErrorDialog">
+      <div class="dialog-box" @click.stop>
+        <h3>Validation Errors</h3>
+        <div class="error-list">
+          <p v-for="(error, index) in errorMessages" :key="index" class="error-item">
+            {{ error }}
+          </p>
+        </div>
+        <div class="dialog-actions">
+          <button @click="closeErrorDialog" class="btn btn-primary">OK</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -104,6 +119,10 @@ const detectorModel = ref({
 
 // State for success dialog
 const showSuccessDialog = ref(false);
+
+// State for error dialog
+const showErrorDialog = ref(false);
+const errorMessages = ref([]);
 
 // Choices for dropdowns
 const manufacturerChoices = ref([]);
@@ -141,7 +160,24 @@ const saveDetectorModel = async () => {
     const result = await post('/api/inventory/detectormodels/', detectorModel.value);
 
     if (!result.ok) {
-      throw new Error(`HTTP error! status: ${result.status}`);
+      if (result.status === 400) {
+        const errorData = result.data;
+        errorMessages.value = [];
+
+        for (const [field, errors] of Object.entries(errorData)) {
+          if (Array.isArray(errors)) {
+            errorMessages.value.push(`${field}: ${errors.join(', ')}`);
+          } else {
+            // Handle cases where errors is not an array
+            errorMessages.value.push(`${field}: ${errors}`);
+          }
+        }
+
+        showErrorDialog.value = true;
+        return; // Don't proceed with success dialog
+      } else {
+        throw new Error(`HTTP error! status: ${result.status}`);
+      }
     }
 
     // Show success dialog
@@ -161,6 +197,12 @@ const closeDialogAndReturn = () => {
 // Close dialog function
 const closeDialog = () => {
   showSuccessDialog.value = false;
+};
+
+// Close error dialog function
+const closeErrorDialog = () => {
+  showErrorDialog.value = false;
+  errorMessages.value = [];
 };
 
 // Initialize component
