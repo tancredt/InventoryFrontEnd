@@ -49,6 +49,7 @@
                 id="station"
                 v-model="location.station"
                 maxlength="32"
+                required
                 class="form-control"
                 placeholder="Enter station name"
               >
@@ -142,7 +143,12 @@ const saveLocation = async () => {
       errorMessages.value = [];
 
       for (const [field, errors] of Object.entries(errorData)) {
-        errorMessages.value.push(`${field}: ${errors.join(', ')}`);
+        if (Array.isArray(errors)) {
+          errorMessages.value.push(`${field}: ${errors.join(', ')}`);
+        } else {
+          // Handle cases where errors is not an array
+          errorMessages.value.push(`${field}: ${errors}`);
+        }
       }
 
       showErrorDialog.value = true;

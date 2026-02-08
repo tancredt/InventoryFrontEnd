@@ -12,7 +12,7 @@
         <select v-model="filterStatus" @change="filterFaults" class="filter-select">
           <option value="">All Statuses</option>
           <option value="OP">Open</option>
-          <option value="CP">Complete</option>
+          <option value="CL">Closed</option>
         </select>
         <select v-model="filterFaultType" @change="filterFaults" class="filter-select">
           <option value="">All Fault Types</option>
@@ -306,7 +306,7 @@ const fetchFaults = async () => {
 const getStatusDisplay = (statusValue) => {
   const statusMap = {
     'OP': 'Open',
-    'CP': 'Closed'
+    'CL': 'Closed'
   };
   return statusMap[statusValue] || statusValue;
 };
@@ -407,8 +407,8 @@ const performFilteringAndCalculateTotals = () => {
 
   // Apply show closed faults filter
   if (!showClosedFaults.value) {
-    // If showClosedFaults is false, filter out faults with status "CP" (Closed)
-    result = result.filter(fault => fault.status !== 'CP');
+    // If showClosedFaults is false, filter out faults with status "CL" (Closed)
+    result = result.filter(fault => fault.status !== 'CL');
   }
 
   // Apply sorting

@@ -46,7 +46,7 @@
               <label for="status">Status *:</label>
               <select id="status" v-model="faultReport.status" class="form-control" :disabled="isClosed" required>
                 <option value="OP">Open</option>
-                <option value="CP">Closed</option>
+                <option value="CL">Closed</option>
               </select>
             </div>
 
@@ -198,11 +198,11 @@ const returnTo = computed(() => {
   }
 });
 
-// Check if fault report status is Closed ('CP') and form was loaded with Closed status
+// Check if fault report status is Closed ('CL') and form was loaded with Closed status
 const isClosed = computed(() => {
   // Disable inputs only if the form was initially loaded with Closed status
   // Allow editing when the user changes the status to Closed from another status
-  return initialStatus.value === 'CP' && faultReport.value.status === 'CP';
+  return initialStatus.value === 'CL' && faultReport.value.status === 'CL';
 });
 
 // Get location label
@@ -385,7 +385,7 @@ watch(() => faultReport.value.resolve_dt, (newVal, oldVal) => {
 // Handle status change dialog response
 const handleStatusChangeDialog = (shouldChange) => {
   if (shouldChange) {
-    faultReport.value.status = 'CP'; // Change to Closed
+    faultReport.value.status = 'CL'; // Change to Closed
   }
   showStatusChangeDialog.value = false;
 };
