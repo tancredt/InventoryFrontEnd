@@ -116,7 +116,14 @@
                 </div>
 
                 <div class="form-group">
-                  <!-- Empty space to maintain layout -->
+                  <label for="location_updated">Location Last Updated</label>
+                  <input
+                    type="text"
+                    id="location_updated"
+                    :value="detector.location_updated ? formatDate(detector.location_updated) : 'Never'"
+                    readonly
+                    class="form-control"
+                  >
                 </div>
               </div>
 
@@ -326,7 +333,8 @@ const detector = ref({
   detector_model: null,
   firmware: null,
   purchase_date: '',
-  purchase_cost: null
+  purchase_cost: null,
+  location_updated: null
 });
 
 // State for tracking if form has been modified
@@ -714,7 +722,8 @@ const fetchDetector = async () => {
       detector_model: data.detector_model || null,
       location: data.location || null,
       configuration: data.configuration || null,
-      firmware: data.firmware || null
+      firmware: data.firmware || null,
+      location_updated: data.location_updated || null
     };
 
     // Store original detector data for dirty checking
@@ -723,7 +732,8 @@ const fetchDetector = async () => {
       detector_model: data.detector_model || null,
       location: data.location || null,
       configuration: data.configuration || null,
-      firmware: data.firmware || null
+      firmware: data.firmware || null,
+      location_updated: data.location_updated || null
     };
 
     // Reset isDirty since we just loaded the data
@@ -805,7 +815,8 @@ const checkIfDirty = () => {
          detector.value.detector_model !== originalDetector.value.detector_model ||
          detector.value.firmware !== originalDetector.value.firmware ||
          detector.value.purchase_date !== originalDetector.value.purchase_date ||
-         detector.value.purchase_cost !== originalDetector.value.purchase_cost;
+         detector.value.purchase_cost !== originalDetector.value.purchase_cost ||
+         detector.value.location_updated !== originalDetector.value.location_updated;
 };
 
 // Watch for changes to detector fields and update isDirty flag
@@ -837,7 +848,8 @@ onMounted(async () => {
       detector_model: null,
       firmware: null,
       purchase_date: '',
-      purchase_cost: null
+      purchase_cost: null,
+      location_updated: null
     };
   }
 
