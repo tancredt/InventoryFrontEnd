@@ -127,6 +127,19 @@
                 </div>
               </div>
 
+              <div class="form-row">
+                <div class="form-group full-width">
+                  <label for="notes">Notes</label>
+                  <textarea
+                    id="notes"
+                    v-model="detector.notes"
+                    rows="4"
+                    class="form-control"
+                    placeholder="Additional notes about the detector..."
+                  ></textarea>
+                </div>
+              </div>
+
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary" :disabled="!isDirty">Save Detector</button>
                 <router-link to="/detectors" class="btn btn-secondary">Cancel</router-link>
@@ -332,6 +345,7 @@ const detector = ref({
   location: null,
   detector_model: null,
   firmware: null,
+  notes: null,
   purchase_date: '',
   purchase_cost: null,
   location_updated: null
@@ -723,6 +737,7 @@ const fetchDetector = async () => {
       location: data.location || null,
       configuration: data.configuration || null,
       firmware: data.firmware || null,
+      notes: data.notes || null,
       location_updated: data.location_updated || null
     };
 
@@ -733,6 +748,7 @@ const fetchDetector = async () => {
       location: data.location || null,
       configuration: data.configuration || null,
       firmware: data.firmware || null,
+      notes: data.notes || null,
       location_updated: data.location_updated || null
     };
 
@@ -814,6 +830,7 @@ const checkIfDirty = () => {
          detector.value.location !== originalDetector.value.location ||
          detector.value.detector_model !== originalDetector.value.detector_model ||
          detector.value.firmware !== originalDetector.value.firmware ||
+         detector.value.notes !== originalDetector.value.notes ||
          detector.value.purchase_date !== originalDetector.value.purchase_date ||
          detector.value.purchase_cost !== originalDetector.value.purchase_cost ||
          detector.value.location_updated !== originalDetector.value.location_updated;
@@ -847,6 +864,7 @@ onMounted(async () => {
       location: null,
       detector_model: null,
       firmware: null,
+      notes: null,
       purchase_date: '',
       purchase_cost: null,
       location_updated: null
@@ -1035,6 +1053,14 @@ h1 {
   flex-basis: calc(50% - 2rem); /* Two columns by default with more space accounting */
   padding: 0 0.25rem; /* Reduced padding to prevent overflow */
   box-sizing: border-box; /* Include padding in width calculation */
+}
+
+.form-group.full-width {
+  flex: 1;
+  min-width: 100%;
+  flex-basis: 100%; /* Full width for textareas */
+  padding: 0 0.25rem;
+  box-sizing: border-box;
 }
 
 /* On smaller screens, make form groups full width */
