@@ -78,7 +78,7 @@
     <div v-if="showStatusChangeDialog" class="dialog-overlay" @click="handleStatusChangeDialog(false)">
       <div class="dialog-box" @click.stop>
         <h3>Change Status?</h3>
-        <p>You've entered a date performed. Would you like to change the status to Complete?</p>
+        <p>You've entered a date performed. Would you like to change the status to Closed?</p>
         <div class="dialog-actions">
           <button @click="handleStatusChangeDialog(true)" class="btn btn-primary">Yes</button>
           <button @click="handleStatusChangeDialog(false)" class="btn btn-secondary">No</button>
@@ -90,7 +90,7 @@
     <div v-if="showMissingDatePerformedWarning" class="dialog-overlay" @click="closeMissingDatePerformedWarning">
       <div class="dialog-box" @click.stop>
         <h3>Missing Date Performed</h3>
-        <p>You have set the status to Complete but have not entered a date performed. Please enter a date performed before completing the maintenance.</p>
+        <p>You have set the status to Closed but have not entered a date performed. Please enter a date performed before completing the maintenance.</p>
         <div class="dialog-actions">
           <button @click="closeMissingDatePerformedWarning" class="btn btn-primary">OK</button>
         </div>
@@ -187,11 +187,11 @@ const returnTo = computed(() => {
 // Track the initial status when the form loads
 const initialStatus = ref('');
 
-// Check if maintenance status is Complete ('CP') and form was loaded with Complete status
+// Check if maintenance status is Closed ('CL') and form was loaded with Closed status
 const isComplete = computed(() => {
-  // Disable inputs only if the form was initially loaded with Complete status
-  // Allow editing when the user changes the status to Complete from another status
-  return initialStatus.value === 'CP' && maintenance.value.status === 'CP';
+  // Disable inputs only if the form was initially loaded with Closed status
+  // Allow editing when the user changes the status to Closed from another status
+  return initialStatus.value === 'CL' && maintenance.value.status === 'CL';
 });
 
 // Fetch choice options from the API
@@ -280,8 +280,8 @@ const saveMaintenance = async () => {
       }
     }
 
-    // If status is Complete, date performed must be set
-    if (maintenance.value.status === 'CP' && !maintenance.value.date_performed) {
+    // If status is Closed, date performed must be set
+    if (maintenance.value.status === 'CL' && !maintenance.value.date_performed) {
       showMissingDatePerformedWarning.value = true;
       return;
     }
@@ -337,8 +337,8 @@ const performSave = async () => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    // Check if status is Complete and date_performed is not null
-    if (maintenance.value.status === 'CP' && maintenance.value.date_performed) {
+    // Check if status is Closed and date_performed is not null
+    if (maintenance.value.status === 'CL' && maintenance.value.date_performed) {
       // Show dialog asking if user wants to schedule a new maintenance
       showScheduleNewDialog.value = true;
     } else {
@@ -354,8 +354,8 @@ const performSave = async () => {
 // Function to handle the status change dialog response
 const handleStatusChangeDialog = (shouldChange) => {
   if (shouldChange) {
-    // Change status to Complete ('CP')
-    maintenance.value.status = 'CP';
+    // Change status to Closed ('CL')
+    maintenance.value.status = 'CL';
   }
   showStatusChangeDialog.value = false;
   // Now proceed with saving
@@ -363,8 +363,8 @@ const handleStatusChangeDialog = (shouldChange) => {
 
 // Watch for changes to date performed
 watch(() => maintenance.value.date_performed, (newVal, oldVal) => {
-  // If a date performed is being set and the status is not already 'Complete', validate the date first
-  if (newVal && maintenance.value.status !== 'CP' && maintenance.value.date_due) {
+  // If a date performed is being set and the status is not already 'Closed', validate the date first
+  if (newVal && maintenance.value.status !== 'CL' && maintenance.value.date_due) {
     const datePerformed = new Date(newVal);
     const dateDue = new Date(maintenance.value.date_due);
 

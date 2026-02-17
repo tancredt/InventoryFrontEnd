@@ -273,7 +273,7 @@ const saveFaultReport = async () => {
     }
 
     // Check if status is Closed but no resolve date is provided
-    if (faultReport.value.status === 'CP' && !faultReport.value.resolve_dt) {
+    if (faultReport.value.status === 'CL' && !faultReport.value.resolve_dt) {
       showMissingResolveDateWarning.value = true;
       return;
     }

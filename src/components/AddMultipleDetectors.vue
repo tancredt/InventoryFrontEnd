@@ -287,7 +287,7 @@ const getLocationLabel = (locationId) => {
 const getModelName = (modelId) => {
   if (!modelId) return 'N/A';
   const model = detectorModels.value.find(m => m.id === modelId);
-  return model ? model.model_name : 'Unknown Model';
+  return model ? model.label : 'Unknown Model';
 };
 
 const getConfigurationLabel = (configId) => {

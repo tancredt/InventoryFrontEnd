@@ -348,7 +348,7 @@ const formatDate = (dateString) => {
 const getDateStatus = (reportDate, status) => {
   if (!reportDate) return ''; // If no report date, return empty string
 
-  if (status === 'CP') {
+  if (status === 'CL') {
     // If status is Closed, return 'closed' status (blue)
     return 'date-closed';
   }

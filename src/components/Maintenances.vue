@@ -13,7 +13,7 @@
           <option value="">All Statuses</option>
           <option value="SC">Scheduled</option>
           <option value="OP">Open</option>
-          <option value="CP">Complete</option>
+          <option value="CL">Closed</option>
         </select>
         <select v-model="filterMaintenanceType" @change="filterMaintenances" class="filter-select">
           <option value="">All Maintenance Types</option>
@@ -45,7 +45,7 @@
               v-model="showCompleteMaintenances"
               @change="filterMaintenances"
             />
-            Show Complete Maintenance
+            Show Closed Maintenance
           </label>
         </div>
         <div class="reset-btn-wrapper">
@@ -302,7 +302,7 @@ const getMaintenanceStatusDisplay = (statusValue) => {
   const statusMap = {
     'SC': 'Scheduled',
     'OP': 'Open',
-    'CP': 'Complete'
+    'CL': 'Closed'
   };
   return statusMap[statusValue] || statusValue;
 };
@@ -312,7 +312,7 @@ const getStatusDisplay = (statusValue) => {
   const statusMap = {
     'SC': 'Scheduled',
     'OP': 'Open',
-    'CP': 'Complete'
+    'CL': 'Closed'
   };
   return statusMap[statusValue] || statusValue;
 };
@@ -374,10 +374,10 @@ const performFilteringAndCalculateTotals = () => {
     });
   }
 
-  // Apply show complete maintenances filter
+  // Apply show closed maintenances filter
   if (!showCompleteMaintenances.value) {
-    // If showCompleteMaintenances is false, filter out maintenances with status "CP" (Complete)
-    result = result.filter(maintenance => maintenance.status !== 'CP');
+    // If showCompleteMaintenances is false, filter out maintenances with status "CL" (Closed)
+    result = result.filter(maintenance => maintenance.status !== 'CL');
   }
 
   // Apply sorting
@@ -559,7 +559,7 @@ const downloadPDF = async () => {
     activeFilters.push(`Due Before: ${filterDueBefore.value}`);
   }
   if (showCompleteMaintenances.value) {
-    activeFilters.push('Show Complete: Yes');
+    activeFilters.push('Show Closed: Yes');
   }
 
   if (activeFilters.length > 0) {

@@ -8,8 +8,8 @@
         <form @submit.prevent="saveDetectorModel" class="detectormodel-form">
           <div class="form-row">
             <div class="form-group">
-              <label for="manufacturer">Manufacturer *</label>
-              <select id="manufacturer" v-model="detectorModel.manufacturer" required class="form-control">
+              <label for="manufacturer">Manufacturer</label>
+              <select id="manufacturer" v-model="detectorModel.manufacturer" class="form-control">
                 <option value="">Select Manufacturer</option>
                 <option v-for="choice in manufacturerChoices" :key="choice.value" :value="choice.value">
                   {{ choice.label }}
@@ -30,8 +30,8 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label for="supplier">Supplier *</label>
-              <select id="supplier" v-model="detectorModel.supplier" required class="form-control">
+              <label for="supplier">Supplier</label>
+              <select id="supplier" v-model="detectorModel.supplier" class="form-control">
                 <option value="">Select Supplier</option>
                 <option v-for="choice in supplierChoices" :key="choice.value" :value="choice.value">
                   {{ choice.label }}
@@ -40,14 +40,14 @@
             </div>
 
             <div class="form-group">
-              <label for="model_name">Model Name *</label>
+              <label for="label">Label *</label>
               <input
                 type="text"
-                id="model_name"
-                v-model="detectorModel.model_name"
+                id="label"
+                v-model="detectorModel.label"
                 required
                 class="form-control"
-                placeholder="Enter model name"
+                placeholder="Enter label"
               >
             </div>
           </div>
@@ -113,7 +113,7 @@ const detectorModel = ref({
   manufacturer: '',
   detector_type: '',
   supplier: '',
-  model_name: '',
+  label: '',
   part_number: ''
 });
 
