@@ -61,8 +61,8 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/detectors/:detectorId/sensortype/:sensorTypeId/edit',
-      name: 'SensorSlotEditBySensorType',
+      path: '/detectors/:detectorId/sensorgas/:sensorGas/edit',
+      name: 'SensorSlotEditBySensorGas',
       component: SensorSlotEdit,
       meta: { requiresAuth: true }
     },

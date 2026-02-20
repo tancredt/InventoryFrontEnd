@@ -13,18 +13,13 @@
             </div>
 
             <div class="form-group">
-              <label for="sensorType">Sensor Type:</label>
-              <input type="text" id="sensorType" :value="sensorTypeLabel" disabled class="form-control readonly">
+              <label for="sensorGas">Sensor Gas:</label>
+              <input type="text" id="sensorGas" :value="gas1Label" disabled class="form-control readonly">
             </div>
 
             <div class="form-group">
               <label for="currentSensor">Current Sensor:</label>
               <input type="text" id="currentSensor" :value="currentSensorLabel" disabled class="form-control readonly">
-            </div>
-
-            <div class="form-group">
-              <label for="gas">Gas:</label>
-              <input type="text" id="gas" :value="gas1Label" disabled class="form-control readonly">
             </div>
 
             <div class="form-group">
@@ -104,8 +99,8 @@ const getCsrfToken = async () => {
 
 // State variables
 const detectorId = ref(route.params.detectorId);
-// Check if we have sensorTypeId (new route format) or slotId (old route format)
-const slotId = ref(route.params.sensorTypeId || route.params.slotId);
+// Check if we have sensorGas (new route format) or slotId (old route format)
+const slotId = ref(route.params.sensorGas || route.params.slotId);
 const detectorLabel = ref('');
 const sensorTypeLabel = ref('');
 const gas1Label = ref('');
@@ -120,9 +115,9 @@ const fetchSensorSlotDetails = async () => {
   try {
     let slotData;
 
-    // Check if slotId is actually a sensor type ID (new route format)
-    // If route has sensorTypeId, we need to find the slot for this detector and sensor type
-    if (route.params.sensorTypeId) {
+    // Check if slotId is actually a sensor gas value (new route format)
+    // If route has sensorGas, we need to find the slot for this detector and sensor gas
+    if (route.params.sensorGas) {
       // Fetch all sensor slots for this detector
       const slotsResponse = await fetch(`/api/inventory/sensorslots/?detector=${detectorId.value}`);
       if (!slotsResponse.ok) {
@@ -130,14 +125,14 @@ const fetchSensorSlotDetails = async () => {
       }
       const allSlots = await slotsResponse.json();
 
-      // Find the slot that matches the sensor type
+      // Find the slot that matches the sensor gas
       // Prefer slots that don't have a sensor assigned yet, otherwise pick the first one
-      const matchingSlots = allSlots.filter(slot => slot.sensor_type == route.params.sensorTypeId);
+      const matchingSlots = allSlots.filter(slot => slot.sensorgas == route.params.sensorGas);
       if (matchingSlots.length === 0) {
-        throw new Error(`No sensor slot found for detector ${detectorId.value} with sensor type ${route.params.sensorTypeId}`);
+        throw new Error(`No sensor slot found for detector ${detectorId.value} with sensor gas ${route.params.sensorGas}`);
       }
 
-      // If there are multiple slots with the same sensor type,
+      // If there are multiple slots with the same sensor gas,
       // prefer the one that doesn't have a sensor assigned yet
       let matchingSlot = matchingSlots.find(slot => !slot.sensor);
       if (!matchingSlot) {
@@ -165,13 +160,8 @@ const fetchSensorSlotDetails = async () => {
       detectorLabel.value = detectorData.label;
     }
 
-    // Fetch sensor type details
-    const sensorTypeResponse = await fetch(`/api/inventory/sensortypes/${slotData.sensor_type}/`);
-    if (sensorTypeResponse.ok) {
-      const sensorTypeData = await sensorTypeResponse.json();
-      sensorTypeLabel.value = sensorTypeData.part_number;
-      gas1Label.value = sensorTypeData.sensorgas;
-    }
+    // Set gas label from the slot data
+    gas1Label.value = slotData.sensorgas;
 
     // Set current sensor if exists
     if (slotData.sensor) {
@@ -185,10 +175,21 @@ const fetchSensorSlotDetails = async () => {
       currentSensorLabel.value = 'None';
     }
 
-    // Fetch available sensors of the same type that are in stock
-    const sensorsResponse = await fetch(`/api/inventory/sensors/?sensor_type=${slotData.sensor_type}&status=IS`);
+    // Fetch available sensors matching the sensor gas that are in stock
+    const sensorsResponse = await fetch(`/api/inventory/sensors/?status=IS`);
     if (sensorsResponse.ok) {
-      availableSensors.value = await sensorsResponse.json();
+      const allSensors = await sensorsResponse.json();
+      // Filter sensors by matching sensor gas through sensor_type
+      const sensorTypesResponse = await fetch('/api/inventory/sensortypes/');
+      if (sensorTypesResponse.ok) {
+        const sensorTypes = await sensorTypesResponse.json();
+        const matchingSensorTypeIds = sensorTypes
+          .filter(st => st.sensorgas === slotData.sensorgas)
+          .map(st => st.id);
+        availableSensors.value = allSensors.filter(s => 
+          s.status === 'IS' && matchingSensorTypeIds.includes(s.sensor_type)
+        );
+      }
     }
   } catch (error) {
     console.error('Error fetching sensor slot details:', error);

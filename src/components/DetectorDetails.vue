@@ -170,8 +170,8 @@
                   </thead>
                   <tbody>
                     <tr v-for="slot in detectorSensorSlots" :key="slot.id">
-                      <td><router-link :to="{ name: 'SensorSlotEditBySensorType', params: { detectorId: route.params.id, sensorTypeId: slot.sensor_type }}" class="sensor-slot-link">{{ getSensorTypeGas1(slot.sensor_type) }}</router-link></td>
-                      <td>{{ getSensorTypePartNumber(slot.sensor_type) }}</td>
+                      <td><router-link :to="{ name: 'SensorSlotEditBySensorGas', params: { detectorId: route.params.id, sensorGas: slot.sensorgas }}" class="sensor-slot-link">{{ getSensorGasDisplay(slot.sensorgas) }}</router-link></td>
+                      <td>{{ getSensorTypePartNumberForSlot(slot) }}</td>
                       <td>{{ getSensorSerial(slot.sensor) || 'N/A' }}</td>
                       <td :class="getDateStatus(getSensorWarrantyDate(slot.sensor))">{{ getSensorWarrantyDate(slot.sensor) || 'N/A' }}</td>
                       <td :class="getDateStatus(getSensorExpiryDate(slot.sensor))">{{ getSensorExpiryDate(slot.sensor) || 'N/A' }}</td>
@@ -555,12 +555,16 @@ const getSensorTypePartNumber = (sensorTypeId) => {
   return sensorType ? sensorType.part_number : 'N/A';
 };
 
-const getSensorTypeGas1 = (sensorTypeId) => {
-  if (!sensorTypeId) return 'N/A';
-  // Find the sensor type in the local state
-  const sensorType = sensorTypes.value.find(st => st.id === sensorTypeId);
-  if (!sensorType) return 'N/A';
+// Get sensor type part number for a slot by matching sensorgas
+const getSensorTypePartNumberForSlot = (slot) => {
+  if (!slot || !slot.sensorgas) return 'N/A';
+  // Find a sensor type that matches the sensor gas
+  const sensorType = sensorTypes.value.find(st => st.sensorgas === slot.sensorgas);
+  return sensorType ? sensorType.part_number : slot.sensorgas;
+};
 
+const getSensorGasDisplay = (sensorgas) => {
+  if (!sensorgas) return 'N/A';
   // Convert gas code to display name using the choices
   const gasMap = {
     'CO': 'CO',
@@ -568,9 +572,16 @@ const getSensorTypeGas1 = (sensorTypeId) => {
     'LE': 'LEL',
     'O2': 'O2',
     'VO': 'VOC',
-    'HC': 'HCN'
+    'HC': 'HCN',
+    'CL': 'Cl2',
+    'PH': 'PH3',
+    'SO': 'SO2',
+    'NO': 'NO2',
+    'C2': 'CO2',
+    'NH': 'NH3',
+    'ET': 'ETO'
   };
-  return gasMap[sensorType.sensorgas] || sensorType.sensorgas;
+  return gasMap[sensorgas] || sensorgas;
 };
 
 // gas_2 is no longer used since sensortype now uses a single sensorgas field
