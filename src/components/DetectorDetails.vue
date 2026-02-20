@@ -161,8 +161,7 @@
                 <table class="summary-table sensors-table">
                   <thead>
                     <tr>
-                      <th>Gas 1</th>
-                      <th>Part Number</th>
+                      <th>Gas</th>
                       <th>Sensor Serial</th>
                       <th>Warranty</th>
                       <th>Expiry</th>
@@ -171,13 +170,12 @@
                   <tbody>
                     <tr v-for="slot in detectorSensorSlots" :key="slot.id">
                       <td><router-link :to="{ name: 'SensorSlotEditBySensorGas', params: { detectorId: route.params.id, sensorGas: slot.sensorgas }}" class="sensor-slot-link">{{ getSensorGasDisplay(slot.sensorgas) }}</router-link></td>
-                      <td>{{ getSensorTypePartNumberForSlot(slot) }}</td>
                       <td>{{ getSensorSerial(slot.sensor) || 'N/A' }}</td>
                       <td :class="getDateStatus(getSensorWarrantyDate(slot.sensor))">{{ getSensorWarrantyDate(slot.sensor) || 'N/A' }}</td>
                       <td :class="getDateStatus(getSensorExpiryDate(slot.sensor))">{{ getSensorExpiryDate(slot.sensor) || 'N/A' }}</td>
                     </tr>
                     <tr v-if="detectorSensorSlots.length === 0">
-                      <td colspan="5">No sensor slots configured</td>
+                      <td colspan="4">No sensor slots configured</td>
                     </tr>
                   </tbody>
                 </table>
@@ -546,21 +544,6 @@ const getSensorTypeName = (sensorTypeId) => {
   if (!sensorTypeId) return 'N/A';
   const sensorType = sensorTypes.value.find(st => st.id === sensorTypeId);
   return sensorType ? sensorType.part_number : 'Unknown Sensor Type';
-};
-
-const getSensorTypePartNumber = (sensorTypeId) => {
-  if (!sensorTypeId) return 'N/A';
-  // Find the sensor type in the local state
-  const sensorType = sensorTypes.value.find(st => st.id === sensorTypeId);
-  return sensorType ? sensorType.part_number : 'N/A';
-};
-
-// Get sensor type part number for a slot by matching sensorgas
-const getSensorTypePartNumberForSlot = (slot) => {
-  if (!slot || !slot.sensorgas) return 'N/A';
-  // Find a sensor type that matches the sensor gas
-  const sensorType = sensorTypes.value.find(st => st.sensorgas === slot.sensorgas);
-  return sensorType ? sensorType.part_number : slot.sensorgas;
 };
 
 const getSensorGasDisplay = (sensorgas) => {
