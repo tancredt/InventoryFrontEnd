@@ -965,9 +965,7 @@ h1 {
   display: grid;
   grid-template-columns: 0.9fr 1fr; /* Left column (detector info) is slightly narrower than right column (accordions) */
   gap: 1rem;
-  height: calc(100vh - 250px); /* Fixed height to prevent scrolling */
   max-width: 100%;
-  overflow: hidden; /* Prevent all scrolling */
 }
 
 .fixed-box {
@@ -977,9 +975,7 @@ h1 {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   min-width: 0; /* Prevents flex items from overflowing */
-  height: 100%;
 }
 
 .fixed-box h2 {
@@ -999,16 +995,13 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  height: 100%;
 }
 
 .form-container {
   flex: 1;
   min-width: 0; /* Prevents flex item from overflowing */
-  height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Prevent scrolling in form container */
 }
 
 .accordion {
@@ -1040,15 +1033,12 @@ h1 {
 .accordion-content {
   padding: 1rem;
   background-color: white;
-  flex: 1;
-  overflow: hidden; /* Prevent scrolling in accordion content */
 }
 
 .detector-form {
   display: flex;
   flex-direction: column;
   min-width: 0; /* Prevents flex item from overflowing */
-  overflow: hidden; /* Prevent scrolling in form */
 }
 
 .form-row {
