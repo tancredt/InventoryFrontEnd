@@ -943,17 +943,14 @@ const fetchDetectorModelConfigurations = async () => {
 <style scoped>
 .detector-details-page {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
 
 .page-container {
   width: 100%;
+  max-width: 1400px;
   margin: 2rem auto;
   padding: 0 2rem;
-  flex: 1;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 h1 {
@@ -965,7 +962,6 @@ h1 {
   display: grid;
   grid-template-columns: 0.9fr 1fr; /* Left column (detector info) is slightly narrower than right column (accordions) */
   gap: 1rem;
-  max-width: 100%;
 }
 
 .fixed-box {
@@ -973,8 +969,6 @@ h1 {
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
   min-width: 0; /* Prevents flex items from overflowing */
 }
 
@@ -998,10 +992,7 @@ h1 {
 }
 
 .form-container {
-  flex: 1;
   min-width: 0; /* Prevents flex item from overflowing */
-  display: flex;
-  flex-direction: column;
 }
 
 .accordion {
