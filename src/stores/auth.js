@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
-// Helper function to get CSRF token
-const getCsrfToken = async () => {
+// Helper function to get CSRF token - exported for use in components
+export const getCsrfToken = async () => {
   // Try to get the CSRF token from cookie first
   const cookies = document.cookie.split(';');
   for (let i = 0; i < cookies.length; i++) {

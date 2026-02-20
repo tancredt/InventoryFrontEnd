@@ -30,15 +30,20 @@
             </div>
 
             <div class="form-group full-width">
-              <label for="sensor_partnumbers">Sensor Part Numbers *</label>
-              <input
-                type="text"
-                id="sensor_partnumbers"
-                v-model="configuration.sensor_partnumbers"
+              <label for="sensor_gases">Sensor Gases *</label>
+              <select
+                id="sensor_gases"
+                v-model="configuration.sensor_gases"
                 required
+                multiple
                 class="form-control"
-                placeholder="Enter sensor part numbers (comma separated)"
+                style="min-height: 150px;"
               >
+                <option v-for="gas in sensorGasChoices" :key="gas.value" :value="gas.value">
+                  {{ gas.label }}
+                </option>
+              </select>
+              <p class="form-help-text">Hold Ctrl/Cmd to select multiple gases. They will be saved as a comma-separated list.</p>
             </div>
           </div>
 
@@ -89,11 +94,28 @@ const router = useRouter();
 const configuration = ref({
   detector_model: null,
   label: '',
-  sensor_partnumbers: ''
+  sensor_gases: ''
 });
 
 // State for related data
 const detectorModels = ref([]);
+
+// Sensor gas choices (matching the SensorGas model choices)
+const sensorGasChoices = [
+  { value: 'CO', label: 'CO' },
+  { value: 'HS', label: 'H2S' },
+  { value: 'LE', label: 'LEL' },
+  { value: 'O2', label: 'O2' },
+  { value: 'VO', label: 'VOC' },
+  { value: 'HC', label: 'HCN' },
+  { value: 'CL', label: 'Cl2' },
+  { value: 'PH', label: 'PH3' },
+  { value: 'SO', label: 'SO2' },
+  { value: 'NO', label: 'NO2' },
+  { value: 'C2', label: 'CO2' },
+  { value: 'NH', label: 'NH3' },
+  { value: 'ET', label: 'ETO' }
+];
 
 // State for success dialog
 const showSuccessDialog = ref(false);
@@ -125,7 +147,15 @@ const getModelName = (modelId) => {
 // Save configuration function
 const saveConfiguration = async () => {
   try {
-    const result = await post('/api/inventory/detectormodelconfigurations/', configuration.value);
+    // Convert the array of selected gases to a comma-separated string
+    const payload = {
+      ...configuration.value,
+      sensor_gases: Array.isArray(configuration.value.sensor_gases) 
+        ? configuration.value.sensor_gases.join(',') 
+        : configuration.value.sensor_gases
+    };
+
+    const result = await post('/api/inventory/detectormodelconfigurations/', payload);
 
     if (!result.ok) {
       const errorData = result.data;
@@ -236,6 +266,12 @@ h1 {
   outline: none;
   border-color: #42b883;
   box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
+}
+
+.form-help-text {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #666;
 }
 
 .form-actions {
