@@ -909,7 +909,7 @@ h1 {
 
 .sensors-table th:nth-child(2),
 .sensors-table td:nth-child(2) {
-  width: 9%; /* Serial */
+  width: 12%; /* Serial */
 }
 
 .sensors-table th:nth-child(3),
@@ -919,7 +919,7 @@ h1 {
 
 .sensors-table th:nth-child(4),
 .sensors-table td:nth-child(4) {
-  width: 9%; /* Gas Type */
+  width: 6%; /* Gas Type */
 }
 
 .sensors-table th:nth-child(5),
