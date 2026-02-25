@@ -153,7 +153,7 @@
               <td>{{ sensor.order_date || 'N/A' }}</td>
               <td>{{ sensor.receive_date || 'N/A' }}</td>
               <td>{{ sensor.warranty_date || 'N/A' }}</td>
-              <td>{{ sensor.expiry_date || 'N/A' }}</td>
+              <td :class="getDateStatus(sensor.expiry_date)">{{ sensor.expiry_date || 'N/A' }}</td>
             </tr>
           </tbody>
         </table>
@@ -416,6 +416,33 @@ const getDetectorLabel = (detectorId) => {
   if (!detectorId) return 'N/A';
   const detector = detectors.value.find(d => d.id === detectorId);
   return detector ? detector.label : 'Not Assigned';
+};
+
+// Function to determine the date status (for expiry dates)
+const getDateStatus = (dateStr) => {
+  if (!dateStr || dateStr === 'N/A') return ''; // If no date, return empty string
+
+  const date = new Date(dateStr);
+  const today = new Date();
+  // Calculate 8 weeks from today
+  const eightWeeksFromToday = new Date(today);
+  eightWeeksFromToday.setDate(today.getDate() + 8 * 7); // 8 weeks = 56 days
+
+  // Set time to 00:00:00 to compare only dates
+  date.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  eightWeeksFromToday.setHours(0, 0, 0, 0);
+
+  if (date <= today) {
+    // Date is today or before today - red
+    return 'date-overdue';
+  } else if (date <= eightWeeksFromToday) {
+    // Date is after today but within 8 weeks - orange
+    return 'date-warning';
+  } else {
+    // Date is more than 8 weeks in the future - blue
+    return 'date-future';
+  }
 };
 
 // Function to perform filtering and sorting, and calculate totals
@@ -1247,5 +1274,20 @@ h1 {
   gap: 0.25rem;
   font-size: 0.875rem;
   color: #495057;
+}
+
+.date-overdue {
+  color: red;
+  font-weight: bold;
+}
+
+.date-warning {
+  color: orange;
+  font-weight: bold;
+}
+
+.date-future {
+  color: blue;
+  font-weight: bold;
 }
 </style>
