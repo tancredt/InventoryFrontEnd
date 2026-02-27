@@ -647,128 +647,32 @@ const prevPage = () => {
   }
 };
 
-// Function to download the table as PDF
-const downloadPDF = async () => {
-  // Dynamically import jsPDF and AutoTable
-  const jsPDFModule = await import('jspdf');
-  const jsPDF = jsPDFModule.default;
-  const autoTableModule = await import('jspdf-autotable');
-  const autoTable = autoTableModule.default || autoTableModule;
-
-  // Create a new PDF document
-  const doc = new jsPDF();
-
-  // Add title
-  doc.setFontSize(18);
-  doc.text('Cylinders Report', 14, 20);
-
-  // Add filter information as a delimited list
-  let yPos = 30;
-  doc.setFontSize(9); // Even smaller font for filter descriptions
-  let filterText = "Filters: ";
-  const activeFilters = [];
-
+// Function to download the table as PDF from backend
+const downloadPDF = () => {
+  // Build URL with current filters
+  const params = new URLSearchParams();
+  
   if (searchTerm.value) {
-    activeFilters.push(`Search: ${searchTerm.value}`);
+    params.append('search', searchTerm.value);
   }
   if (filterStatus.value) {
-    activeFilters.push(`Status: ${getStatusDisplay(filterStatus.value)}`);
+    params.append('status', filterStatus.value);
   }
   if (filterCylinderType.value) {
-    activeFilters.push(`Type: ${getCylinderTypeLabel(filterCylinderType.value)}`);
+    params.append('cylinder_type', filterCylinderType.value);
   }
   if (filterLocation.value) {
-    activeFilters.push(`Location: ${getLocationLabel(filterLocation.value)}`);
+    params.append('location', filterLocation.value);
   }
   if (filterExpiresBefore.value) {
-    activeFilters.push(`Expires Before: ${filterExpiresBefore.value}`);
+    params.append('expiry_date_lte', filterExpiresBefore.value);
   }
-  if (showEmptyCylinders.value) {
-    activeFilters.push('Show Empty: Yes');
-  }
-
-  if (activeFilters.length > 0) {
-    filterText += activeFilters.join(", ");
-    doc.text(filterText, 14, yPos);
-    yPos += 6; // Space after filter line
-  } else {
-    doc.text("Filters: None", 14, yPos);
-    yPos += 6; // Space after filter line
-  }
-  yPos += 4; // Additional space before the table
-
-  // Prepare table data
-  const tableData = filteredCylinders.value.map(cylinder => [
-    cylinder.label || 'N/A',
-    cylinder.serial || 'N/A',
-    getCylinderTypeLabel(cylinder.cylinder_type) || 'N/A',
-    getCylinderTypeSupplier(cylinder.cylinder_type) || 'N/A',
-    getLocationLabel(cylinder.location) || 'N/A',
-    getStatusDisplay(cylinder.status),
-    cylinder.order_date || 'N/A',
-    cylinder.receive_date || 'N/A',
-    cylinder.expiry_date || 'N/A'
-  ]);
-
-  // Define table columns
-  const tableColumns = [
-    'Label',
-    'Serial',
-    'Type',
-    'Supplier',
-    'Location',
-    'Status',
-    'Order Date',
-    'Receive Date',
-    'Expiry Date'
-  ];
-
-  // Add table to PDF
-  autoTable(doc, {
-    head: [tableColumns],
-    body: tableData,
-    startY: yPos,
-    headStyles: {
-      fillColor: [66, 184, 131], // Green color matching the app
-      textColor: [255, 255, 255],
-      fontSize: 8,
-      fontStyle: 'bold'
-    },
-    bodyStyles: {
-      fontSize: 7
-    },
-    alternateRowStyles: {
-      fillColor: [245, 245, 245]
-    },
-    margin: { top: 0, right: 5, bottom: 10, left: 5 },
-    styles: {
-      cellPadding: 3
-    },
-    columnStyles: {
-      0: { cellWidth: 18 }, // Label
-      1: { cellWidth: 22 }, // Serial
-      2: { cellWidth: 20 }, // Type
-      3: { cellWidth: 20 }, // Supplier
-      4: { cellWidth: 25 }, // Location
-      5: { cellWidth: 15 }, // Status
-      6: { cellWidth: 20 }, // Order Date
-      7: { cellWidth: 20 }, // Receive Date
-      8: { cellWidth: 20 }  // Expiry Date
-    }
-  });
-
-  // Add timestamp
-  const timestamp = new Date().toLocaleString();
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(10);
-    doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 40, doc.internal.pageSize.height - 10);
-    doc.text(`Generated: ${timestamp}`, 14, doc.internal.pageSize.height - 10);
-  }
-
-  // Save the PDF
-  doc.save('cylinders-report.pdf');
+  
+  const queryString = params.toString();
+  const url = `/api/inventory/pdf/cylinders/${queryString ? `?${queryString}` : ''}`;
+  
+  // Open in new tab or download directly
+  window.open(url, '_blank');
 };
 </script>
 
