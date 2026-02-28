@@ -570,7 +570,7 @@ const prevPage = () => {
 const downloadPDF = () => {
   // Build URL with current filters
   const params = new URLSearchParams();
-  
+
   if (searchTerm.value) {
     params.append('search', searchTerm.value);
   }
@@ -583,10 +583,19 @@ const downloadPDF = () => {
   if (filterLocation.value) {
     params.append('location', filterLocation.value);
   }
+  if (filterConfiguration.value) {
+    params.append('configuration', filterConfiguration.value);
+  }
+  if (showDecommissionedDetectors.value) {
+    params.append('show_decommissioned', 'true');
+  }
   
+  // Add cache-busting timestamp
+  params.append('_t', Date.now().toString());
+
   const queryString = params.toString();
   const url = `/api/inventory/pdf/detectors/${queryString ? `?${queryString}` : ''}`;
-  
+
   // Open in new tab or download directly
   window.open(url, '_blank');
 };

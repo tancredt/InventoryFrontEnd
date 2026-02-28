@@ -626,7 +626,7 @@ const prevPage = () => {
 const downloadPDF = () => {
   // Build URL with current filters
   const params = new URLSearchParams();
-  
+
   if (searchTerm.value) {
     params.append('search', searchTerm.value);
   }
@@ -642,10 +642,16 @@ const downloadPDF = () => {
   if (filterExpiresBefore.value) {
     params.append('expiry_date_lte', filterExpiresBefore.value);
   }
+  if (showDecommissionedSensors.value) {
+    params.append('show_decommissioned', 'true');
+  }
   
+  // Add cache-busting timestamp
+  params.append('_t', Date.now().toString());
+
   const queryString = params.toString();
   const url = `/api/inventory/pdf/sensors/${queryString ? `?${queryString}` : ''}`;
-  
+
   // Open in new tab or download directly
   window.open(url, '_blank');
 };

@@ -534,7 +534,7 @@ const prevPage = () => {
 const downloadPDF = () => {
   // Build URL with current filters
   const params = new URLSearchParams();
-  
+
   if (filterStatus.value) {
     params.append('status', filterStatus.value);
   }
@@ -547,10 +547,16 @@ const downloadPDF = () => {
   if (filterDueBefore.value) {
     params.append('date_due_lte', filterDueBefore.value);
   }
+  if (showCompleteMaintenances.value) {
+    params.append('show_complete', 'true');
+  }
   
+  // Add cache-busting timestamp
+  params.append('_t', Date.now().toString());
+
   const queryString = params.toString();
   const url = `/api/inventory/pdf/maintenance/${queryString ? `?${queryString}` : ''}`;
-  
+
   // Open in new tab or download directly
   window.open(url, '_blank');
 };

@@ -543,7 +543,7 @@ const prevPage = () => {
 const downloadPDF = () => {
   // Build URL with current filters
   const params = new URLSearchParams();
-  
+
   if (filterStatus.value) {
     params.append('status', filterStatus.value);
   }
@@ -556,10 +556,16 @@ const downloadPDF = () => {
   if (filterReportedBefore.value) {
     params.append('report_dt_lte', filterReportedBefore.value);
   }
+  if (showClosedFaults.value) {
+    params.append('show_closed', 'true');
+  }
   
+  // Add cache-busting timestamp
+  params.append('_t', Date.now().toString());
+
   const queryString = params.toString();
   const url = `/api/inventory/pdf/faults/${queryString ? `?${queryString}` : ''}`;
-  
+
   // Open in new tab or download directly
   window.open(url, '_blank');
 };
