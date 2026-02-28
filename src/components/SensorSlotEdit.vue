@@ -79,10 +79,17 @@ const selectedSensor = ref('');
 const installDate = ref(new Date().toISOString().split('T')[0]);
 const availableSensors = ref([]);
 const showSuccessDialog = ref(false);
+const sensorGasChoices = ref([]);
 
 // Fetch the sensor slot details and related data
 const fetchSensorSlotDetails = async () => {
   try {
+    // Fetch sensor gas choices first
+    const gasResponse = await fetch('/api/inventory/sensor-gases/');
+    if (gasResponse.ok) {
+      sensorGasChoices.value = await gasResponse.json();
+    }
+
     let slotData;
 
     // Check if slotId is actually a sensor gas value (new route format)
@@ -131,7 +138,7 @@ const fetchSensorSlotDetails = async () => {
     }
 
     // Set gas label from the slot data
-    gas1Label.value = slotData.sensorgas;
+    gas1Label.value = getSensorGasLabel(slotData.sensorgas);
 
     // Set current sensor if exists
     if (slotData.sensor) {
@@ -175,6 +182,12 @@ const getSensorStatusLabel = (statusValue) => {
     'DC': 'Decommissioned'
   };
   return statusMap[statusValue] || statusValue;
+};
+
+// Get sensor gas label from choices
+const getSensorGasLabel = (gasValue) => {
+  const choice = sensorGasChoices.value.find(c => c.value === gasValue);
+  return choice ? choice.label : gasValue;
 };
 
 watch(selectedSensor, () => {
