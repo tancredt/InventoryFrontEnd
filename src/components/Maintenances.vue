@@ -100,7 +100,12 @@
                 </router-link>
               </td>
               <td>{{ getMaintenanceStatusDisplay(maintenance.status) }}</td>
-              <td>{{ getDetectorLabel(maintenance.detector) }}</td>
+              <td>
+                <router-link v-if="maintenance.detector" :to="`/detectors/${maintenance.detector}`" class="detector-link">
+                  {{ getDetectorLabel(maintenance.detector) }}
+                </router-link>
+                <span v-else>N/A</span>
+              </td>
               <td :class="getDateDueStatus(maintenance.date_due, maintenance.date_performed)">{{ maintenance.date_due || 'N/A' }}</td>
               <td>{{ maintenance.date_performed || 'N/A' }}</td>
             </tr>
@@ -778,6 +783,16 @@ h1 {
 }
 
 .maintenance-link:hover {
+  text-decoration: underline;
+}
+
+.detector-link {
+  color: #42b883;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.detector-link:hover {
   text-decoration: underline;
 }
 

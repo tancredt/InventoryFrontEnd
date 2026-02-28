@@ -99,7 +99,12 @@
           </thead>
           <tbody>
             <tr v-for="fault in filteredFaults" :key="fault.id">
-              <td>{{ getDetectorLabel(fault.detector) }}</td>
+              <td>
+                <router-link v-if="fault.detector" :to="`/detectors/${fault.detector}`" class="detector-link">
+                  {{ getDetectorLabel(fault.detector) }}
+                </router-link>
+                <span v-else>N/A</span>
+              </td>
               <td>
                 <router-link :to="`/faultreports/${fault.detector}/${fault.id}?from=faults`" class="fault-link">
                   {{ getFaultTypeDisplay(fault.fault_type) }}
@@ -792,6 +797,16 @@ h1 {
 }
 
 .fault-link:hover {
+  text-decoration: underline;
+}
+
+.detector-link {
+  color: #42b883;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.detector-link:hover {
   text-decoration: underline;
 }
 
