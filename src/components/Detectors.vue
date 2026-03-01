@@ -590,6 +590,14 @@ const downloadPDF = () => {
     params.append('show_decommissioned', 'true');
   }
   
+  // Add sort parameters
+  if (sortKey.value) {
+    params.append('sort_key', sortKey.value);
+  }
+  if (sortDirection.value) {
+    params.append('sort_direction', sortDirection.value);
+  }
+  
   // Add cache-busting timestamp
   params.append('_t', Date.now().toString());
 
