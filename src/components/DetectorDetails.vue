@@ -18,7 +18,7 @@
                     v-model="detector.label"
                     required
                     :disabled="!isNewDetector"
-                    class="form-control"
+                    class="form-control"  
                   >
                 </div>
 
@@ -570,7 +570,6 @@ const getSensorGasDisplay = (sensorgas) => {
 // gas_2 is no longer used since sensortype now uses a single sensorgas field
 
 const getSensorSerial = (sensor) => {
-  console.log(sensor);
   if (!sensor) return 'N/A';
   // If sensor is an object with serial property, return it
   if (typeof sensor === 'object' && sensor.serial) {
