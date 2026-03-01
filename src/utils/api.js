@@ -59,13 +59,7 @@ export const apiCall = async (url, options = {}) => {
   }
 
   // Get the CSRF token asynchronously
-  let csrfToken = null;
-  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method?.toUpperCase())) {
-    csrfToken = await getCsrfToken();
-  } else {
-    // For non-dangerous methods, just check cookie
-    csrfToken = getCsrfTokenFromCookie();
-  }
+  let csrfToken = await getCsrfToken();
 
   // Set default options
   const defaultOptions = {
