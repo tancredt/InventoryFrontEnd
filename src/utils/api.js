@@ -126,8 +126,8 @@ export const put = async (url, body, options = {}) => {
     body: typeof body === 'string' ? body : JSON.stringify(body)
   });
 };
-
-export const patch = async (url, body, options = {}) => {
+//Not using at the moment
+/*export const patch = async (url, body, options = {}) => {
   return apiCall(url, {
     ...options,
     method: 'PATCH',
@@ -137,4 +137,4 @@ export const patch = async (url, body, options = {}) => {
 
 export const del = async (url, options = {}) => {
   return apiCall(url, { ...options, method: 'DELETE' });
-};
+};*/
