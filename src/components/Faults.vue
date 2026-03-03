@@ -282,13 +282,13 @@ const fetchFaults = async () => {
     }
 
     // Build the URL with parameters
-    let url = '/inventory/detectorfaults/';
+    let url = '/api/inventory/detectorfaults/';
     if (params.toString()) {
       url += '?' + params.toString();
     }
 
     // Fetch faults from the Django REST API
-    const response = await fetch(url.replace('/inventory/', '/api/inventory/'));
+    const response = await fetch(url));
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
