@@ -288,7 +288,7 @@ const fetchFaults = async () => {
     }
 
     // Fetch faults from the Django REST API
-    const response = await fetch(url));
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
