@@ -239,17 +239,6 @@ const saveMaintenance = async () => {
       return;
     }
 
-    // Validate date performed if it exists
-    if (maintenance.value.date_performed && maintenance.value.date_due) {
-      const datePerformed = new Date(maintenance.value.date_performed);
-      const dateDue = new Date(maintenance.value.date_due);
-
-      if (datePerformed < dateDue) {
-        alert('Date Performed must be equal to or greater than Date Due.');
-        return;
-      }
-    }
-
     // If status is Closed, date performed must be set
     if (maintenance.value.status === 'CL' && !maintenance.value.date_performed) {
       showMissingDatePerformedWarning.value = true;
@@ -330,24 +319,6 @@ const handleStatusChangeDialog = (shouldChange) => {
   showStatusChangeDialog.value = false;
   // Now proceed with saving
 };
-
-// Watch for changes to date performed
-watch(() => maintenance.value.date_performed, (newVal, oldVal) => {
-  // If a date performed is being set and the status is not already 'Closed', validate the date first
-  if (newVal && maintenance.value.status !== 'CL' && maintenance.value.date_due) {
-    const datePerformed = new Date(newVal);
-    const dateDue = new Date(maintenance.value.date_due);
-
-    if (datePerformed >= dateDue) {
-      // Date is valid, show the status change dialog
-      showStatusChangeDialog.value = true;
-    } else {
-      // Date is invalid, show an error and clear the date performed
-      alert('Date Performed must be equal to or greater than Date Due.');
-      maintenance.value.date_performed = '';
-    }
-  }
-});
 
 // Close dialog and return to appropriate page based on where user came from
 const closeDialogAndReturn = () => {
