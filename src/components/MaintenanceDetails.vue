@@ -301,51 +301,24 @@ const syncSelectedTaskTypes = () => {
   selectedTaskTypes.value = maintenanceTasks.value.map(task => task.task_type);
 };
 
-// Track task changes for batch save
-const tasksToAdd = ref([]);
-const tasksToRemove = ref([]);
-
-// Watch for changes in selectedTaskTypes and track for batch save
-watch(selectedTaskTypes, (newTaskTypes, oldTaskTypes) => {
-  // Skip if component is not mounted yet or if maintenance is complete
-  if (isComplete.value) return;
-
-  const addedTypes = newTaskTypes.filter(type => !oldTaskTypes.includes(type));
-  const removedTypes = oldTaskTypes.filter(type => !newTaskTypes.includes(type));
-
-  // Track tasks to add
-  for (const taskType of addedTypes) {
-    if (!tasksToAdd.value.includes(taskType)) {
-      tasksToAdd.value.push(taskType);
-    }
-  }
-
-  // Track tasks to remove
-  for (const taskType of removedTypes) {
-    if (!tasksToRemove.value.includes(taskType)) {
-      tasksToRemove.value.push(taskType);
-    }
-  }
-}, { deep: true });
-
-// Save tasks after maintenance is saved
+// Save tasks after maintenance is saved - delete all existing and recreate selected
 const saveTasks = async (maintenanceId) => {
   try {
-    // Remove tasks first
-    for (const taskType of tasksToRemove.value) {
-      const taskToRemove = maintenanceTasks.value.find(task => task.task_type === taskType);
-      if (taskToRemove && taskToRemove.id) {
-        const result = await del(`/api/inventory/maintenancetasks/${taskToRemove.id}/`);
+    // Delete all existing tasks for this maintenance
+    for (const task of maintenanceTasks.value) {
+      if (task.id) {
+        const result = await del(`/api/inventory/maintenancetasks/${task.id}/`);
         if (!result.ok) {
-          console.error('Failed to remove task:', taskType);
-        } else {
-          maintenanceTasks.value = maintenanceTasks.value.filter(t => t.id !== taskToRemove.id);
+          console.error('Failed to remove task:', task.task_type);
         }
       }
     }
 
-    // Add new tasks
-    for (const taskType of tasksToAdd.value) {
+    // Clear local tasks list
+    maintenanceTasks.value = [];
+
+    // Add all currently selected tasks
+    for (const taskType of selectedTaskTypes.value) {
       const result = await post('/api/inventory/maintenancetasks/', {
         maintenance: maintenanceId,
         task_type: taskType
@@ -356,10 +329,6 @@ const saveTasks = async (maintenanceId) => {
         console.error('Failed to add task:', taskType);
       }
     }
-
-    // Clear the tracking arrays
-    tasksToAdd.value = [];
-    tasksToRemove.value = [];
   } catch (error) {
     console.error('Error saving tasks:', error);
   }
@@ -377,9 +346,14 @@ const fetchMaintenanceTasks = async () => {
       maintenanceTasks.value = result.data;
       // Sync selected task types with fetched tasks
       syncSelectedTaskTypes();
+      // Mark initial sync as complete
+      isInitialSync.value = false;
     } catch (error) {
       console.error('Error fetching maintenance tasks:', error);
     }
+  } else {
+    // If creating new maintenance, no existing tasks to sync
+    isInitialSync.value = false;
   }
 };
 
@@ -445,7 +419,7 @@ const performSave = async () => {
     }
 
     // Save tasks after maintenance is saved
-    if (savedMaintenanceId && (tasksToAdd.value.length > 0 || tasksToRemove.value.length > 0)) {
+    if (savedMaintenanceId) {
       await saveTasks(savedMaintenanceId);
     }
 
