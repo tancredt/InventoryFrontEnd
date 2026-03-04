@@ -37,21 +37,44 @@
               </select>
             </div>
 
+            <div class="form-group full-width">
+              <label for="notes">Notes:</label>
+              <textarea id="notes" v-model="maintenance.notes" class="form-control" :disabled="isComplete" rows="3"></textarea>
+            </div>
+
             <div class="divider"></div>
+
+            <div class="form-group full-width">
+              <label for="maintenanceTasks">Maintenance Tasks:</label>
+              <div class="multi-select-dropdown" v-click-outside="closeTaskDropdown">
+                <div 
+                  class="multi-select-input" 
+                  @click="toggleTaskDropdown"
+                  :class="{ 'active': showTaskDropdown }"
+                >
+                  <span v-if="selectedTaskTypes.length === 0" class="placeholder">Select tasks...</span>
+                  <span v-else class="selected-tasks">{{ getSelectedTasksDisplay() }}</span>
+                  <svg class="dropdown-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+                <div v-show="showTaskDropdown" class="multi-select-options">
+                  <label v-for="choice in maintenanceTaskTypeChoices" :key="choice.value" class="checkbox-option">
+                    <input 
+                      type="checkbox" 
+                      :value="choice.value" 
+                      v-model="selectedTaskTypes"
+                      :disabled="isComplete"
+                    />
+                    <span>{{ choice.label }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
 
             <div class="form-group">
               <label for="datePerformed">Date Performed:</label>
               <input type="date" id="datePerformed" v-model="maintenance.date_performed" class="form-control" :disabled="isComplete">
-            </div>
-
-            <div class="form-group">
-              <label for="performedBy">Performed By:</label>
-              <input type="text" id="performedBy" v-model="maintenance.performed_by" class="form-control" :disabled="isComplete">
-            </div>
-
-            <div class="form-group full-width">
-              <label for="notes">Notes:</label>
-              <textarea id="notes" v-model="maintenance.notes" class="form-control" :disabled="isComplete" rows="3"></textarea>
             </div>
           </div>
 
@@ -108,57 +131,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Maintenance Tasks Section -->
-    <div class="page-container">
-      <div class="tasks-section">
-        <h2>Maintenance Tasks</h2>
-        
-        <div class="tasks-header">
-          <div class="task-type-select">
-            <label for="taskType">Add Task:</label>
-            <select id="taskType" v-model="selectedTaskType" class="form-control" :disabled="isComplete">
-              <option value="">Select a task type</option>
-              <option v-for="choice in maintenanceTaskTypeChoices" :key="choice.value" :value="choice.value">
-                {{ choice.label }}
-              </option>
-            </select>
-            <button @click="addTask" class="btn btn-primary btn-add-task" :disabled="!selectedTaskType || isComplete">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              Add
-            </button>
-          </div>
-        </div>
-
-        <div class="tasks-list">
-          <div v-if="maintenanceTasks.length === 0" class="no-tasks">
-            No tasks added yet.
-          </div>
-          <div v-else class="tasks-table">
-            <div class="task-row task-header-row">
-              <div class="task-cell">Task Type</div>
-              <div class="task-cell">Actions</div>
-            </div>
-            <div v-for="task in maintenanceTasks" :key="task.id" class="task-row">
-              <div class="task-cell">
-                {{ getTaskTypeLabel(task.task_type) }}
-              </div>
-              <div class="task-cell task-actions">
-                <button @click="removeTask(task)" class="btn btn-danger btn-sm" :disabled="isComplete" title="Remove task">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -166,6 +138,21 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { get, post, put, del } from '@/utils/api';
+
+// Custom directive for clicking outside
+const vClickOutside = {
+  beforeMount(el, binding) {
+    el.clickOutsideEvent = function(event) {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value();
+      }
+    };
+    document.addEventListener('click', el.clickOutsideEvent);
+  },
+  unmounted(el) {
+    document.removeEventListener('click', el.clickOutsideEvent);
+  }
+};
 
 const router = useRouter();
 const route = useRoute();
@@ -187,7 +174,8 @@ const maintenanceTypeChoices = ref([]);
 const maintenanceStatusChoices = ref([]);
 const maintenanceTaskTypeChoices = ref([]);
 const maintenanceTasks = ref([]);
-const selectedTaskType = ref('');
+const selectedTaskTypes = ref([]);
+const showTaskDropdown = ref(false);
 const showSuccessDialog = ref(false);
 const showStatusChangeDialog = ref(false);
 const showMissingDatePerformedWarning = ref(false);
@@ -285,6 +273,68 @@ const getTaskTypeLabel = (taskTypeValue) => {
   return choice ? choice.label : taskTypeValue;
 };
 
+// Toggle task dropdown
+const toggleTaskDropdown = () => {
+  if (!isComplete.value) {
+    showTaskDropdown.value = !showTaskDropdown.value;
+  }
+};
+
+// Close task dropdown
+const closeTaskDropdown = () => {
+  showTaskDropdown.value = false;
+};
+
+// Get display text for selected tasks
+const getSelectedTasksDisplay = () => {
+  if (selectedTaskTypes.value.length === 0) return '';
+  return selectedTaskTypes.value
+    .map(taskType => {
+      const choice = maintenanceTaskTypeChoices.value.find(c => c.value === taskType);
+      return choice ? choice.label : taskType;
+    })
+    .join(', ');
+};
+
+// Sync selectedTaskTypes with maintenanceTasks
+const syncSelectedTaskTypes = () => {
+  selectedTaskTypes.value = maintenanceTasks.value.map(task => task.task_type);
+};
+
+// Watch for changes in selectedTaskTypes and update maintenanceTasks
+watch(selectedTaskTypes, async (newTaskTypes, oldTaskTypes) => {
+  // Skip if component is not mounted yet or if maintenance is complete
+  if (isComplete.value) return;
+  
+  const addedTypes = newTaskTypes.filter(type => !oldTaskTypes.includes(type));
+  const removedTypes = oldTaskTypes.filter(type => !newTaskTypes.includes(type));
+
+  // Add new tasks
+  for (const taskType of addedTypes) {
+    try {
+      if (!isNewMaintenance.value) {
+        const result = await post('/api/inventory/maintenancetasks/', {
+          maintenance: parseInt(route.params.maintenanceId),
+          task_type: taskType
+        });
+        if (result.ok) {
+          maintenanceTasks.value.push(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
+  }
+
+  // Remove tasks
+  for (const taskType of removedTypes) {
+    const taskToRemove = maintenanceTasks.value.find(task => task.task_type === taskType);
+    if (taskToRemove) {
+      await removeTask(taskToRemove, true); // true = silent mode (no confirmation)
+    }
+  }
+}, { deep: true });
+
 // Fetch maintenance tasks for the current maintenance
 const fetchMaintenanceTasks = async () => {
   // Only fetch if we have a maintenance ID (editing existing maintenance)
@@ -295,46 +345,17 @@ const fetchMaintenanceTasks = async () => {
         throw new Error(`HTTP error! status: ${result.status}`);
       }
       maintenanceTasks.value = result.data;
+      // Sync selected task types with fetched tasks
+      syncSelectedTaskTypes();
     } catch (error) {
       console.error('Error fetching maintenance tasks:', error);
     }
   }
 };
 
-// Add a new task
-const addTask = async () => {
-  if (!selectedTaskType.value) return;
-
-  try {
-    const result = await post('/api/inventory/maintenancetasks/', {
-      maintenance: isNewMaintenance.value ? null : parseInt(route.params.maintenanceId),
-      task_type: selectedTaskType.value
-    });
-
-    if (!result.ok) {
-      throw new Error(result.data.detail || 'Failed to add task');
-    }
-
-    const newTask = result.data;
-    
-    // If we're creating a new maintenance, we need to associate the task after save
-    if (isNewMaintenance.value) {
-      // Store the task temporarily, it will be associated after maintenance is saved
-      maintenanceTasks.value.push({ ...newTask, id: `temp-${Date.now()}` });
-    } else {
-      maintenanceTasks.value.push(newTask);
-    }
-    
-    selectedTaskType.value = '';
-  } catch (error) {
-    console.error('Error adding task:', error);
-    alert('Error adding task: ' + error.message);
-  }
-};
-
 // Remove a task
-const removeTask = async (task) => {
-  if (!confirm('Are you sure you want to remove this task?')) return;
+const removeTask = async (task, silent = false) => {
+  if (!silent && !confirm('Are you sure you want to remove this task?')) return;
 
   try {
     // If it's a temporary task (new maintenance not yet saved), just remove from local list
@@ -719,121 +740,101 @@ textarea.form-control {
   }
 }
 
-/* Tasks Section Styles */
-.tasks-section {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  margin-top: 1rem;
+/* Multi-select Dropdown Styles */
+.multi-select-dropdown {
+  position: relative;
+  width: 100%;
 }
 
-.tasks-section h2 {
-  color: #2c3e50;
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
-}
-
-.tasks-header {
-  margin-bottom: 1rem;
-}
-
-.task-type-select {
+.multi-select-input {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+  min-height: 44px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.task-type-select label {
-  font-weight: 600;
+.multi-select-input:hover {
+  border-color: #42b883;
+}
+
+.multi-select-input.active {
+  border-color: #42b883;
+  box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
+}
+
+.multi-select-input .placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.multi-select-input .selected-tasks {
   color: #333;
-  white-space: nowrap;
-}
-
-.task-type-select select {
   flex: 1;
-  min-width: 200px;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.btn-add-task {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.tasks-list {
-  margin-top: 1rem;
+.dropdown-arrow {
+  transition: transform 0.2s;
+  color: #666;
 }
 
-.no-tasks {
-  text-align: center;
-  color: #6c757d;
-  padding: 2rem;
-  background-color: #f8f9fa;
-  border-radius: 4px;
+.multi-select-input.active .dropdown-arrow {
+  transform: rotate(180deg);
 }
 
-.tasks-table {
+.multi-select-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 250px;
+  overflow-y: auto;
+  background-color: white;
   border: 1px solid #ddd;
   border-radius: 4px;
-  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  padding: 0.5rem 0;
 }
 
-.task-row {
-  display: grid;
-  grid-template-columns: 1fr 100px;
-  border-bottom: 1px solid #ddd;
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.task-row:last-child {
-  border-bottom: none;
+.checkbox-option:hover {
+  background-color: #f5f5f5;
 }
 
-.task-header-row {
-  background-color: #f8f9fa;
-  font-weight: 600;
+.checkbox-option input[type="checkbox"] {
+  margin-right: 0.75rem;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checkbox-option input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.checkbox-option span {
+  flex: 1;
   color: #333;
 }
 
-.task-cell {
-  padding: 0.75rem;
-  display: flex;
-  align-items: center;
-}
-
-.task-cell:first-child {
-  border-right: 1px solid #ddd;
-}
-
-.task-actions {
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.btn-sm {
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-danger {
-  background-color: #dc3545;
-  color: white;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background-color: #c82333;
-}
-
-.btn-danger:disabled {
+.checkbox-option:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
