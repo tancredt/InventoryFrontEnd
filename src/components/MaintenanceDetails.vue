@@ -309,7 +309,7 @@ const tasksToRemove = ref([]);
 watch(selectedTaskTypes, (newTaskTypes, oldTaskTypes) => {
   // Skip if component is not mounted yet or if maintenance is complete
   if (isComplete.value) return;
-  
+
   const addedTypes = newTaskTypes.filter(type => !oldTaskTypes.includes(type));
   const removedTypes = oldTaskTypes.filter(type => !newTaskTypes.includes(type));
 
@@ -380,31 +380,6 @@ const fetchMaintenanceTasks = async () => {
     } catch (error) {
       console.error('Error fetching maintenance tasks:', error);
     }
-  }
-};
-
-// Remove a task
-const removeTask = async (task, silent = false) => {
-  if (!silent && !confirm('Are you sure you want to remove this task?')) return;
-
-  try {
-    // If it's a temporary task (new maintenance not yet saved), just remove from local list
-    if (task.id && typeof task.id === 'string' && task.id.startsWith('temp-')) {
-      maintenanceTasks.value = maintenanceTasks.value.filter(t => t.id !== task.id);
-      return;
-    }
-
-    // Otherwise, delete from the server
-    const result = await del(`/api/inventory/maintenancetasks/${task.id}/`);
-
-    if (!result.ok) {
-      throw new Error('Failed to remove task');
-    }
-
-    maintenanceTasks.value = maintenanceTasks.value.filter(t => t.id !== task.id);
-  } catch (error) {
-    console.error('Error removing task:', error);
-    alert('Error removing task: ' + error.message);
   }
 };
 
