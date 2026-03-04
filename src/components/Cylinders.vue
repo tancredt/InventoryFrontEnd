@@ -1,7 +1,7 @@
 <template>
   <div class="cylinders-page">
     <div class="filters-section">
-      <button @click="toggleFilters" :aria-expanded="showFilters" class="filter-toggle-btn">
+      <button @click="toggleFilters" :aria-expanded="showFilters" :class="{ 'filter-toggle-btn': true, 'has-active-filters': hasActiveFilters }">
         {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon">
           <polyline points="6 9 12 15 18 9"></polyline>
@@ -556,6 +556,17 @@ const totalFilteredCylinders = computed(() => {
   return totalFilteredCylindersResult.value;
 });
 
+// Computed property to check if any filters are active
+const hasActiveFilters = computed(() => {
+  return searchTerm.value !== '' ||
+    filterStatus.value !== '' ||
+    filterLocation.value !== '' ||
+    filterDetector.value !== '' ||
+    filterCylinderType.value !== '' ||
+    filterExpiresBefore.value !== '' ||
+    showEmptyCylinders.value === true;
+});
+
 // Function to sort the table
 const sortBy = (key) => {
   if (sortKey.value === key) {
@@ -684,10 +695,19 @@ const downloadPDF = () => {
   cursor: pointer;
   font-size: 1rem;
   margin-bottom: 1rem;
+  transition: background-color 0.3s ease;
 }
 
 .filter-toggle-btn:hover {
   background-color: #36966d;
+}
+
+.filter-toggle-btn.has-active-filters {
+  background-color: #e67e22;
+}
+
+.filter-toggle-btn.has-active-filters:hover {
+  background-color: #d35400;
 }
 
 .toggle-icon {
