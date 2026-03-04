@@ -1,7 +1,7 @@
 <template>
   <div class="faults-page">
     <div class="filters-section">
-      <button @click="toggleFilters" :aria-expanded="showFilters" :class="{ 'filter-toggle-btn': true, 'has-active-filters': hasActiveFilters }">
+      <button @click="toggleFilters" :aria-expanded="showFilters" class="filter-toggle-btn" :class="{ 'has-active-filters': hasActiveFilters }">
         {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon">
           <polyline points="6 9 12 15 18 9"></polyline>
