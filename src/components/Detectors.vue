@@ -18,11 +18,9 @@
         >
         <select v-model="filterStatus" @change="filterDetectors" class="filter-select">
           <option value="">All Statuses</option>
-          <option value="OP">Operational</option>
-          <option value="IS">In Stock</option>
-          <option value="OO">On Order</option>
-          <option value="OF">Offline Repair</option>
-          <option value="DC">Decommissioned</option>
+          <option v-for="choice in detectorStatusChoices" :key="choice.value" :value="choice.value">
+            {{ choice.label }}
+          </option>
         </select>
         <select v-model="filterLocation" @change="filterDetectors" class="filter-select">
           <option value="">All Locations</option>
@@ -168,6 +166,7 @@ const loading = ref(true);
 const detectorModels = ref([]);
 const locations = ref([]);
 const detectorModelConfigurations = ref([]);
+const detectorStatusChoices = ref([]);
 
 
 // State for sorting and filtering
@@ -209,11 +208,12 @@ onMounted(async () => {
     showDecommissionedDetectors.value = state.showDecommissionedDetectors || false;
   }
 
-  // Load detector models, locations, and configurations first
+  // Load detector models, locations, configurations, and statuses first
   await Promise.all([
     fetchDetectorModels(),
     fetchLocations(),
-    fetchDetectorModelConfigurations()
+    fetchDetectorModelConfigurations(),
+    fetchDetectorStatuses()
   ]);
 
   // Then load detectors
@@ -282,6 +282,19 @@ const fetchDetectorModelConfigurations = async () => {
   }
 };
 
+// Fetch detector statuses from the API
+const fetchDetectorStatuses = async () => {
+  try {
+    const result = await get('/api/inventory/detector-statuses/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
+    }
+    detectorStatusChoices.value = result.data;
+  } catch (error) {
+    console.error('Error fetching detector statuses:', error);
+  }
+};
+
 
 
 
@@ -290,8 +303,47 @@ const fetchDetectors = async () => {
   try {
     loading.value = true;
 
+    // Build query parameters based on filters
+    const params = new URLSearchParams();
+
+    // Add search filter
+    if (searchTerm.value) {
+      params.append('search', searchTerm.value);
+    }
+
+    // Add status filter
+    if (filterStatus.value) {
+      params.append('status', filterStatus.value);
+    }
+
+    // Add location filter
+    if (filterLocation.value) {
+      params.append('location', filterLocation.value);
+    }
+
+    // Add model filter
+    if (filterModel.value) {
+      params.append('detector_model', filterModel.value);
+    }
+
+    // Add configuration filter
+    if (filterConfiguration.value) {
+      params.append('configuration', filterConfiguration.value);
+    }
+
+    // Add exclude decommissioned filter (default behavior when checkbox is not selected)
+    if (!showDecommissionedDetectors.value) {
+      params.append('exclude_status', 'DC');
+    }
+
+    // Build the URL with parameters
+    let url = '/api/inventory/detectors/';
+    if (params.toString()) {
+      url += '?' + params.toString();
+    }
+
     // Fetch detectors from the Django REST API
-    const result = await get('/api/inventory/detectors/');
+    const result = await get(url);
 
     if (!result.ok) {
       throw new Error(`HTTP error! status: ${result.status}`);
@@ -299,8 +351,8 @@ const fetchDetectors = async () => {
 
     detectors.value = result.data;
 
-    // Run filtering after detectors are loaded
-    performFilteringAndCalculateTotals();
+    // Apply sorting and pagination after fetching
+    performSortingAndPagination();
   } catch (error) {
     console.error('Error fetching detectors:', error);
     // In case of error, we could show a user-friendly message
@@ -309,16 +361,11 @@ const fetchDetectors = async () => {
   }
 };
 
-// Status display mapping
+// Get status label from choices
 const getStatusDisplay = (statusValue) => {
-  const statusMap = {
-    'OP': 'Operational',
-    'IS': 'In Stock',
-    'OO': 'On Order',
-    'OF': 'Offline Repair',
-    'DC': 'Decommissioned'
-  };
-  return statusMap[statusValue] || statusValue;
+  if (!statusValue) return 'N/A';
+  const choice = detectorStatusChoices.value.find(c => c.value === statusValue);
+  return choice ? choice.label : statusValue;
 };
 
 // Configuration display mapping
@@ -376,70 +423,9 @@ const getDetectorModelManufacturer = (modelId) => {
   return manufacturerMap[model.manufacturer] || model.manufacturer;
 };
 
-// Function to perform filtering and sorting, and calculate totals
-const performFilteringAndCalculateTotals = () => {
+// Function to perform sorting and pagination
+const performSortingAndPagination = () => {
   let result = [...detectors.value];
-
-  // Apply search filter - only on label and serial
-  if (searchTerm.value) {
-    const term = searchTerm.value.toLowerCase();
-    result = result.filter(detector =>
-      detector.label.toLowerCase().includes(term) ||
-      (detector.serial && detector.serial.toLowerCase().includes(term))
-    );
-  }
-
-  // Apply status filter
-  if (filterStatus.value) {
-    result = result.filter(detector => detector.status === filterStatus.value);
-  }
-
-  // Apply location filter
-  if (filterLocation.value) {
-    result = result.filter(detector =>
-      typeof detector.location === 'object' ?
-        detector.location.id === filterLocation.value :
-        detector.location === filterLocation.value
-    );
-  }
-
-  // Apply model filter
-  if (filterModel.value) {
-    result = result.filter(detector =>
-      typeof detector.detector_model === 'object' ?
-        detector.detector_model.id === filterModel.value :
-        detector.detector_model === filterModel.value
-    );
-  }
-
-  // Apply configuration filter
-  if (filterConfiguration.value) {
-    result = result.filter(detector => {
-      // Get the configuration label from the local state for comparison
-      const configLabel = getConfigurationLabel(filterConfiguration.value);
-
-      // Get the detector's configuration label
-      let detectorConfigLabel = 'N/A';
-      if (detector.configuration) {
-        if (typeof detector.configuration === 'object' && detector.configuration.label) {
-          // If configuration is an object with a label, use it directly
-          detectorConfigLabel = detector.configuration.label;
-        } else {
-          // Otherwise, treat it as an ID and use the local state
-          detectorConfigLabel = getConfigurationLabel(detector.configuration);
-        }
-      }
-
-      // Compare the detector's configuration label with the filter configuration label
-      return detectorConfigLabel === configLabel;
-    });
-  }
-
-  // Apply show decommissioned detectors filter
-  if (!showDecommissionedDetectors.value) {
-    // If showDecommissionedDetectors is false, filter out detectors with status "DC" (Decommissioned)
-    result = result.filter(detector => detector.status !== 'DC');
-  }
 
   // Apply sorting
   if (sortKey.value) {
@@ -473,7 +459,7 @@ const performFilteringAndCalculateTotals = () => {
     });
   }
 
-  // Store the total count before pagination
+  // Store the total count
   totalFilteredDetectorsResult.value = result.length;
 
   // Calculate total pages
@@ -485,11 +471,22 @@ const performFilteringAndCalculateTotals = () => {
   filteredDetectorsResult.value = result.slice(startIndex, endIndex);
 };
 
-// Watch for changes to filter/sort/pagination parameters and re-run filtering
+// Watch for changes to filter parameters and re-fetch from API
 watch(
-  [searchTerm, filterStatus, filterLocation, filterModel, filterConfiguration, showDecommissionedDetectors, sortKey, sortDirection, currentPage],
+  [searchTerm, filterStatus, filterLocation, filterModel, filterConfiguration, showDecommissionedDetectors],
   () => {
-    performFilteringAndCalculateTotals();
+    // Reset to first page when filters change
+    currentPage.value = 1;
+    fetchDetectors();
+  },
+  { deep: true }
+);
+
+// Watch for changes to sort/pagination parameters and re-sort locally
+watch(
+  [sortKey, sortDirection, currentPage],
+  () => {
+    performSortingAndPagination();
   },
   { deep: true }
 );

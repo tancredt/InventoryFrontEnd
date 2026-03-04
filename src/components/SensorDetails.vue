@@ -157,7 +157,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getCsrfToken } from '@/stores/auth';
+import { get, post, put } from '@/utils/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -199,11 +199,11 @@ const isNewSensor = computed(() => route.params.id === 'new');
 // Fetch sensor types from the API
 const fetchSensorTypes = async () => {
   try {
-    const response = await fetch('/api/inventory/sensortypes/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/sensortypes/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    sensorTypes.value = await response.json();
+    sensorTypes.value = result.data;
   } catch (error) {
     console.error('Error fetching sensor types:', error);
   }
@@ -213,11 +213,11 @@ const fetchSensorTypes = async () => {
 // Fetch sensor data if editing existing sensor
 const fetchSensor = async () => {
   try {
-    const response = await fetch(`/api/inventory/sensors/${route.params.id}/`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get(`/api/inventory/sensors/${route.params.id}/`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    const data = await response.json();
+    const data = result.data;
     sensor.value = {
       ...data,
       sensor_type: data.sensor_type || null,
@@ -271,7 +271,7 @@ const saveSensor = async () => {
       return;
     }
 
-    let response;
+    let result;
     // Prepare the sensor data with proper data types
     let sensorData = {
       ...sensor.value,
@@ -288,42 +288,20 @@ const saveSensor = async () => {
       // When creating a new sensor, explicitly set detector to null
       sensorData.detector = null;
 
-      // Get CSRF token
-      const csrfToken = await getCsrfToken();
-
       // Creating a new sensor
-      response = await fetch('/api/inventory/sensors/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(sensorData)
-      });
+      result = await post('/api/inventory/sensors/', sensorData);
     } else {
       // When updating an existing sensor, remove the detector field to leave it unchanged
       delete sensorData.detector;
 
-      // Get CSRF token
-      const csrfToken = await getCsrfToken();
-
       // Updating an existing sensor
-      response = await fetch(`/api/inventory/sensors/${route.params.id}/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(sensorData)
-      });
+      result = await put(`/api/inventory/sensors/${route.params.id}/`, sensorData);
     }
 
-    if (!response.ok) {
+    if (!result.ok) {
       // Handle validation errors
-      if (response.status === 400) {
-        const errorData = await response.json();
+      if (result.status === 400) {
+        const errorData = result.data;
         errorMessages.value = [];
 
         for (const [field, errors] of Object.entries(errorData)) {
@@ -333,7 +311,7 @@ const saveSensor = async () => {
         showErrorDialog.value = true;
         return; // Don't proceed with success dialog
       } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${result.status}`);
       }
     }
 

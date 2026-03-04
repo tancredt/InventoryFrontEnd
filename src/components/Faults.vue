@@ -11,17 +11,15 @@
       <div v-show="showFilters" class="search-and-filters-popover">
         <select v-model="filterStatus" @change="filterFaults" class="filter-select">
           <option value="">All Statuses</option>
-          <option value="OP">Open</option>
-          <option value="CL">Closed</option>
+          <option v-for="choice in faultStatusChoices" :key="choice.value" :value="choice.value">
+            {{ choice.label }}
+          </option>
         </select>
         <select v-model="filterFaultType" @change="filterFaults" class="filter-select">
           <option value="">All Fault Types</option>
-          <option value="BF">Failed Bump</option>
-          <option value="SF">Sensor Fail</option>
-          <option value="DE">Displays Error</option>
-          <option value="WS">Will not turn on</option>
-          <option value="DD">Damaged Display</option>
-          <option value="MA">Missing Attachment</option>
+          <option v-for="choice in faultTypeChoices" :key="choice.value" :value="choice.value">
+            {{ choice.label }}
+          </option>
         </select>
         <select v-model="filterDetector" @change="filterFaults" class="filter-select">
           <option value="">All Detectors</option>
@@ -151,6 +149,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { get } from '@/utils/api';
 
 // State for faults data
 const faults = ref([]);
@@ -159,6 +158,8 @@ const loading = ref(true);
 // State for related data
 const detectors = ref([]);
 const locations = ref([]);
+const faultTypeChoices = ref([]);
+const faultStatusChoices = ref([]);
 
 // State for sorting and filtering
 const sortKey = ref('report_dt');
@@ -196,10 +197,12 @@ onMounted(async () => {
     showClosedFaults.value = state.showClosedFaults || false;
   }
 
-  // Load detectors and locations first
+  // Load detectors, locations, fault types, and statuses first
   await Promise.all([
     fetchDetectors(),
-    fetchLocations()
+    fetchLocations(),
+    fetchFaultTypes(),
+    fetchFaultStatuses()
   ]);
 
   // Then load faults
@@ -230,11 +233,11 @@ watch([sortKey, sortDirection, filterStatus, filterFaultType, filterDetector, fi
 // Fetch detectors from the API
 const fetchDetectors = async () => {
   try {
-    const response = await fetch('/api/inventory/detectors/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/detectors/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    detectors.value = await response.json();
+    detectors.value = result.data;
   } catch (error) {
     console.error('Error fetching detectors:', error);
   }
@@ -243,13 +246,39 @@ const fetchDetectors = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/api/inventory/locations/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/locations/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    locations.value = await response.json();
+    locations.value = result.data;
   } catch (error) {
     console.error('Error fetching locations:', error);
+  }
+};
+
+// Fetch fault types from the API
+const fetchFaultTypes = async () => {
+  try {
+    const result = await get('/api/inventory/detector-fault-types/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
+    }
+    faultTypeChoices.value = result.data;
+  } catch (error) {
+    console.error('Error fetching fault types:', error);
+  }
+};
+
+// Fetch fault statuses from the API
+const fetchFaultStatuses = async () => {
+  try {
+    const result = await get('/api/inventory/detector-statuses/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
+    }
+    faultStatusChoices.value = result.data;
+  } catch (error) {
+    console.error('Error fetching fault statuses:', error);
   }
 };
 
@@ -281,6 +310,11 @@ const fetchFaults = async () => {
       params.append('report_dt_lte', filterReportedBefore.value);
     }
 
+    // Add exclude closed filter (default behavior when checkbox is not selected)
+    if (!showClosedFaults.value) {
+      params.append('exclude_status', 'CL');
+    }
+
     // Build the URL with parameters
     let url = '/api/inventory/detectorfaults/';
     if (params.toString()) {
@@ -288,17 +322,16 @@ const fetchFaults = async () => {
     }
 
     // Fetch faults from the Django REST API
-    const response = await fetch(url);
+    const result = await get(url);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
 
-    const faultData = await response.json();
-    faults.value = faultData;
+    faults.value = result.data;
 
-    // Run filtering after faults are loaded
-    performFilteringAndCalculateTotals();
+    // Apply sorting and pagination after fetching
+    performSortingAndPagination();
   } catch (error) {
     console.error('Error fetching faults:', error);
     // In case of error, we could show a user-friendly message
@@ -307,26 +340,18 @@ const fetchFaults = async () => {
   }
 };
 
-// Status display mapping
+// Get status label from choices
 const getStatusDisplay = (statusValue) => {
-  const statusMap = {
-    'OP': 'Open',
-    'CL': 'Closed'
-  };
-  return statusMap[statusValue] || statusValue;
+  if (!statusValue) return 'N/A';
+  const choice = faultStatusChoices.value.find(c => c.value === statusValue);
+  return choice ? choice.label : statusValue;
 };
 
-// Fault type display mapping
+// Get fault type label from choices
 const getFaultTypeDisplay = (faultTypeValue) => {
-  const faultTypeMap = {
-    'BF': 'Failed Bump',
-    'SF': 'Sensor Fail',
-    'DE': 'Displays Error',
-    'WS': 'Will not turn on',
-    'DD': 'Damaged Display',
-    'MA': 'Missing Attachment'
-  };
-  return faultTypeMap[faultTypeValue] || faultTypeValue;
+  if (!faultTypeValue) return 'N/A';
+  const choice = faultTypeChoices.value.find(c => c.value === faultTypeValue);
+  return choice ? choice.label : faultTypeValue;
 };
 
 // Helper functions to get related object labels using local state
@@ -377,44 +402,9 @@ const getDateStatus = (reportDate, status) => {
   return 'date-overdue';
 };
 
-// Function to perform filtering and sorting, and calculate totals
-const performFilteringAndCalculateTotals = () => {
+// Function to perform sorting and pagination
+const performSortingAndPagination = () => {
   let result = [...faults.value];
-
-  // Apply status filter
-  if (filterStatus.value) {
-    result = result.filter(fault => fault.status === filterStatus.value);
-  }
-
-  // Apply fault type filter
-  if (filterFaultType.value) {
-    result = result.filter(fault => fault.fault_type === filterFaultType.value);
-  }
-
-  // Apply detector filter
-  if (filterDetector.value) {
-    result = result.filter(fault =>
-      typeof fault.detector === 'object' ?
-        fault.detector.id === filterDetector.value :
-        fault.detector === filterDetector.value
-    );
-  }
-
-  // Apply reported before filter
-  if (filterReportedBefore.value) {
-    const reportedBeforeDate = new Date(filterReportedBefore.value);
-    result = result.filter(fault => {
-      if (!fault.report_dt) return false; // Exclude faults without report dates
-      const faultReportDate = new Date(fault.report_dt);
-      return faultReportDate < reportedBeforeDate;
-    });
-  }
-
-  // Apply show closed faults filter
-  if (!showClosedFaults.value) {
-    // If showClosedFaults is false, filter out faults with status "CL" (Closed)
-    result = result.filter(fault => fault.status !== 'CL');
-  }
 
   // Apply sorting
   if (sortKey.value) {
@@ -445,7 +435,7 @@ const performFilteringAndCalculateTotals = () => {
     });
   }
 
-  // Store the total count before pagination
+  // Store the total count
   totalFilteredFaultsResult.value = result.length;
 
   // Calculate total pages
@@ -457,11 +447,22 @@ const performFilteringAndCalculateTotals = () => {
   filteredFaultsResult.value = result.slice(startIndex, endIndex);
 };
 
-// Watch for changes to filter/sort/pagination parameters and re-run filtering
+// Watch for changes to filter parameters and re-fetch from API
 watch(
-  [filterStatus, filterFaultType, filterDetector, filterReportedBefore, showClosedFaults, sortKey, sortDirection, currentPage],
+  [filterStatus, filterFaultType, filterDetector, filterReportedBefore, showClosedFaults],
   () => {
-    performFilteringAndCalculateTotals();
+    // Reset to first page when filters change
+    currentPage.value = 1;
+    fetchFaults();
+  },
+  { deep: true }
+);
+
+// Watch for changes to sort/pagination parameters and re-sort locally
+watch(
+  [sortKey, sortDirection, currentPage],
+  () => {
+    performSortingAndPagination();
   },
   { deep: true }
 );

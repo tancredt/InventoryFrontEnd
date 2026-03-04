@@ -158,7 +158,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { post, put } from '@/utils/api.js';
+import { get, post, put } from '@/utils/api';
 import CylinderTypeDetailsDialog from './CylinderTypeDetailsDialog.vue';
 
 const router = useRouter();
@@ -204,11 +204,11 @@ const isNewCylinder = computed(() => route.params.id === 'new');
 // Fetch cylinder types from the API
 const fetchCylinderTypes = async () => {
   try {
-    const response = await fetch('/api/inventory/cylindertypes/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/cylindertypes/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    cylinderTypes.value = await response.json();
+    cylinderTypes.value = result.data;
   } catch (error) {
     console.error('Error fetching cylinder types:', error);
   }
@@ -217,11 +217,11 @@ const fetchCylinderTypes = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/api/inventory/locations/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/locations/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    locations.value = await response.json();
+    locations.value = result.data;
   } catch (error) {
     console.error('Error fetching locations:', error);
   }
@@ -230,11 +230,11 @@ const fetchLocations = async () => {
 // Fetch cylinder data if editing existing cylinder
 const fetchCylinder = async () => {
   try {
-    const response = await fetch(`/api/inventory/cylinders/${route.params.id}/`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get(`/api/inventory/cylinders/${route.params.id}/`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    const data = await response.json();
+    const data = result.data;
     cylinder.value = {
       ...data,
       cylinder_type: data.cylinder_type || null,

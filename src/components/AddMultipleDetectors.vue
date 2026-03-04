@@ -176,7 +176,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getCsrfToken } from '@/stores/auth';
+import { get, post } from '@/utils/api';
 
 const router = useRouter();
 
@@ -211,11 +211,11 @@ let cancelRequested = false;
 // Fetch detector models from the API
 const fetchDetectorModels = async () => {
   try {
-    const response = await fetch('/api/inventory/detectormodels/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/detectormodels/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    detectorModels.value = await response.json();
+    detectorModels.value = result.data;
   } catch (error) {
     console.error('Error fetching detector models:', error);
   }
@@ -224,11 +224,11 @@ const fetchDetectorModels = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/api/inventory/locations/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/locations/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    locations.value = await response.json();
+    locations.value = result.data;
   } catch (error) {
     console.error('Error fetching locations:', error);
   }
@@ -237,11 +237,11 @@ const fetchLocations = async () => {
 // Fetch detector model configurations from the API
 const fetchDetectorModelConfigurations = async () => {
   try {
-    const response = await fetch('/api/inventory/detectormodelconfigurations/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/detectormodelconfigurations/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    detectorModelConfigurations.value = await response.json();
+    detectorModelConfigurations.value = result.data;
   } catch (error) {
     console.error('Error fetching detector model configurations:', error);
   }
@@ -345,24 +345,13 @@ const addMultipleDetectors = async () => {
       progressCount.value = `${i} of ${detectors.value.length} completed`;
 
       try {
-        // Get CSRF token
-        const csrfToken = await getCsrfToken();
+        const result = await post('/api/inventory/detectors/', detectorData);
 
-        const response = await fetch('/api/inventory/detectors/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-          },
-          credentials: 'include',  // Important for session cookies
-          body: JSON.stringify(detectorData)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+        if (!result.ok) {
+          const errorData = result.data;
 
           // Handle validation errors from the API
-          if (response.status === 400) {
+          if (result.status === 400) {
             errorMessages.value = [];
 
             for (const [field, errors] of Object.entries(errorData)) {
@@ -373,7 +362,7 @@ const addMultipleDetectors = async () => {
             showProgressDialog.value = false;
             return; // Stop the process
           } else {
-            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            throw new Error(errorData.detail || `HTTP error! status: ${result.status}`);
           }
         }
 

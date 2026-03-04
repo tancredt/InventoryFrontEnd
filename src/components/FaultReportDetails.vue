@@ -120,7 +120,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getCsrfToken } from '@/stores/auth';
+import { get, post, put } from '@/utils/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -186,11 +186,11 @@ const getLocationLabel = (locationId) => {
 const fetchChoices = async () => {
   try {
     // Fetch fault type choices directly
-    const response = await fetch('/api/inventory/detector-fault-types/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/detector-fault-types/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    detectorFaultTypes.value = await response.json();
+    detectorFaultTypes.value = result.data;
     faultTypeChoices.value = detectorFaultTypes.value;
   } catch (error) {
     console.error('Error fetching choice options:', error);
@@ -202,11 +202,11 @@ const fetchFaultReport = async () => {
   // Only fetch if we're editing an existing fault report (not creating a new one)
   if (route.params.faultId && route.params.faultId !== 'new') {
     try {
-      const response = await fetch(`/api/inventory/detectorfaults/${route.params.faultId}/`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const result = await get(`/api/inventory/detectorfaults/${route.params.faultId}/`);
+      if (!result.ok) {
+        throw new Error(`HTTP error! status: ${result.status}`);
       }
-      const data = await response.json();
+      const data = result.data;
       faultReport.value = {
         ...data,
         report_dt: data.report_dt ? new Date(data.report_dt).toISOString().split('T')[0] : '',
@@ -222,12 +222,11 @@ const fetchFaultReport = async () => {
 // Fetch detector details
 const fetchDetectorDetails = async () => {
   try {
-    const response = await fetch(`/api/inventory/detectors/${detectorId.value}/`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get(`/api/inventory/detectors/${detectorId.value}/`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    const data = await response.json();
-    detectorLabel.value = data.label;
+    detectorLabel.value = result.data.label;
   } catch (error) {
     console.error('Error fetching detector details:', error);
   }
@@ -273,38 +272,21 @@ const saveFaultReport = async () => {
 
     const payload = preparePayload(faultReport.value);
 
-    // Get CSRF token
-    const csrfToken = await getCsrfToken();
+    let result;
 
     if (isNewFault.value) {
       // Creating a new fault report
-      response = await fetch('/api/inventory/detectorfaults/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify({
-          ...payload,
-          detector: parseInt(detectorId.value)  // Convert string ID to integer
-        })
+      result = await post('/api/inventory/detectorfaults/', {
+        ...payload,
+        detector: parseInt(detectorId.value)  // Convert string ID to integer
       });
     } else {
       // Updating an existing fault report
-      response = await fetch(`/api/inventory/detectorfaults/${route.params.faultId}/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(payload)
-      });
+      result = await put(`/api/inventory/detectorfaults/${route.params.faultId}/`, payload);
     }
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
 
     // Show success dialog
@@ -384,11 +366,11 @@ onMounted(async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/api/inventory/locations/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/locations/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    locations.value = await response.json();
+    locations.value = result.data;
   } catch (error) {
     console.error('Error fetching locations:', error);
   }

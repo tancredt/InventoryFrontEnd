@@ -108,13 +108,64 @@
         </div>
       </div>
     </div>
+
+    <!-- Maintenance Tasks Section -->
+    <div class="page-container">
+      <div class="tasks-section">
+        <h2>Maintenance Tasks</h2>
+        
+        <div class="tasks-header">
+          <div class="task-type-select">
+            <label for="taskType">Add Task:</label>
+            <select id="taskType" v-model="selectedTaskType" class="form-control" :disabled="isComplete">
+              <option value="">Select a task type</option>
+              <option v-for="choice in maintenanceTaskTypeChoices" :key="choice.value" :value="choice.value">
+                {{ choice.label }}
+              </option>
+            </select>
+            <button @click="addTask" class="btn btn-primary btn-add-task" :disabled="!selectedTaskType || isComplete">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add
+            </button>
+          </div>
+        </div>
+
+        <div class="tasks-list">
+          <div v-if="maintenanceTasks.length === 0" class="no-tasks">
+            No tasks added yet.
+          </div>
+          <div v-else class="tasks-table">
+            <div class="task-row task-header-row">
+              <div class="task-cell">Task Type</div>
+              <div class="task-cell">Actions</div>
+            </div>
+            <div v-for="task in maintenanceTasks" :key="task.id" class="task-row">
+              <div class="task-cell">
+                {{ getTaskTypeLabel(task.task_type) }}
+              </div>
+              <div class="task-cell task-actions">
+                <button @click="removeTask(task)" class="btn btn-danger btn-sm" :disabled="isComplete" title="Remove task">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getCsrfToken } from '@/stores/auth';
+import { get, post, put, del } from '@/utils/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -134,6 +185,9 @@ const maintenance = ref({
 });
 const maintenanceTypeChoices = ref([]);
 const maintenanceStatusChoices = ref([]);
+const maintenanceTaskTypeChoices = ref([]);
+const maintenanceTasks = ref([]);
+const selectedTaskType = ref('');
 const showSuccessDialog = ref(false);
 const showStatusChangeDialog = ref(false);
 const showMissingDatePerformedWarning = ref(false);
@@ -168,15 +222,21 @@ const isComplete = computed(() => {
 const fetchChoices = async () => {
   try {
     // Fetch maintenance type choices
-    const maintenanceTypeResponse = await fetch('/api/inventory/maintenance-types/');
-    if (maintenanceTypeResponse.ok) {
-      maintenanceTypeChoices.value = await maintenanceTypeResponse.json();
+    const maintenanceTypeResult = await get('/api/inventory/maintenance-types/');
+    if (maintenanceTypeResult.ok) {
+      maintenanceTypeChoices.value = maintenanceTypeResult.data;
     }
-    
+
     // Fetch maintenance status choices
-    const maintenanceStatusResponse = await fetch('/api/inventory/maintenance-statuses/');
-    if (maintenanceStatusResponse.ok) {
-      maintenanceStatusChoices.value = await maintenanceStatusResponse.json();
+    const maintenanceStatusResult = await get('/api/inventory/maintenance-statuses/');
+    if (maintenanceStatusResult.ok) {
+      maintenanceStatusChoices.value = maintenanceStatusResult.data;
+    }
+
+    // Fetch maintenance task type choices
+    const maintenanceTaskTypeResult = await get('/api/inventory/maintenance-task-types/');
+    if (maintenanceTaskTypeResult.ok) {
+      maintenanceTaskTypeChoices.value = maintenanceTaskTypeResult.data;
     }
   } catch (error) {
     console.error('Error fetching choice options:', error);
@@ -189,11 +249,11 @@ const fetchMaintenance = async () => {
   // Only fetch if we're editing an existing maintenance (not creating a new one)
   if (route.params.maintenanceId && route.params.maintenanceId !== 'new') {
     try {
-      const response = await fetch(`/api/inventory/maintenances/${route.params.maintenanceId}/`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const result = await get(`/api/inventory/maintenances/${route.params.maintenanceId}/`);
+      if (!result.ok) {
+        throw new Error(`HTTP error! status: ${result.status}`);
       }
-      const data = await response.json();
+      const data = result.data;
       maintenance.value = {
         ...data,
         detector: detectorId.value, // Ensure detector is always set to the current detector
@@ -209,14 +269,91 @@ const fetchMaintenance = async () => {
 // Fetch detector details
 const fetchDetectorDetails = async () => {
   try {
-    const response = await fetch(`/api/inventory/detectors/${detectorId.value}/`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get(`/api/inventory/detectors/${detectorId.value}/`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    const data = await response.json();
-    detectorLabel.value = data.label;
+    detectorLabel.value = result.data.label;
   } catch (error) {
     console.error('Error fetching detector details:', error);
+  }
+};
+
+// Get task type label from choices
+const getTaskTypeLabel = (taskTypeValue) => {
+  const choice = maintenanceTaskTypeChoices.value.find(c => c.value === taskTypeValue);
+  return choice ? choice.label : taskTypeValue;
+};
+
+// Fetch maintenance tasks for the current maintenance
+const fetchMaintenanceTasks = async () => {
+  // Only fetch if we have a maintenance ID (editing existing maintenance)
+  if (route.params.maintenanceId && route.params.maintenanceId !== 'new') {
+    try {
+      const result = await get(`/api/inventory/maintenancetasks/?maintenance=${route.params.maintenanceId}`);
+      if (!result.ok) {
+        throw new Error(`HTTP error! status: ${result.status}`);
+      }
+      maintenanceTasks.value = result.data;
+    } catch (error) {
+      console.error('Error fetching maintenance tasks:', error);
+    }
+  }
+};
+
+// Add a new task
+const addTask = async () => {
+  if (!selectedTaskType.value) return;
+
+  try {
+    const result = await post('/api/inventory/maintenancetasks/', {
+      maintenance: isNewMaintenance.value ? null : parseInt(route.params.maintenanceId),
+      task_type: selectedTaskType.value
+    });
+
+    if (!result.ok) {
+      throw new Error(result.data.detail || 'Failed to add task');
+    }
+
+    const newTask = result.data;
+    
+    // If we're creating a new maintenance, we need to associate the task after save
+    if (isNewMaintenance.value) {
+      // Store the task temporarily, it will be associated after maintenance is saved
+      maintenanceTasks.value.push({ ...newTask, id: `temp-${Date.now()}` });
+    } else {
+      maintenanceTasks.value.push(newTask);
+    }
+    
+    selectedTaskType.value = '';
+  } catch (error) {
+    console.error('Error adding task:', error);
+    alert('Error adding task: ' + error.message);
+  }
+};
+
+// Remove a task
+const removeTask = async (task) => {
+  if (!confirm('Are you sure you want to remove this task?')) return;
+
+  try {
+    // If it's a temporary task (new maintenance not yet saved), just remove from local list
+    if (task.id && typeof task.id === 'string' && task.id.startsWith('temp-')) {
+      maintenanceTasks.value = maintenanceTasks.value.filter(t => t.id !== task.id);
+      return;
+    }
+
+    // Otherwise, delete from the server
+    const result = await del(`/api/inventory/maintenancetasks/${task.id}/`);
+
+    if (!result.ok) {
+      throw new Error('Failed to remove task');
+    }
+
+    maintenanceTasks.value = maintenanceTasks.value.filter(t => t.id !== task.id);
+  } catch (error) {
+    console.error('Error removing task:', error);
+    alert('Error removing task: ' + error.message);
   }
 };
 
@@ -257,43 +394,23 @@ const saveMaintenance = async () => {
 // Function to handle the actual saving after dialog confirmation
 const performSave = async () => {
   try {
-   
+
     // Convert empty strings to null for date fields
     if (maintenance.value.date_performed === '') {
       maintenance.value.date_performed = null;
     }
 
-
-    // Get CSRF token
-    const csrfToken = await getCsrfToken();
-
-    let response;
+    let result;
     if (isNewMaintenance.value) {
       // Creating a new maintenance
-      response = await fetch('/api/inventory/maintenances/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(maintenance.value)
-      });
+      result = await post('/api/inventory/maintenances/', maintenance.value);
     } else {
       // Updating an existing maintenance
-      response = await fetch(`/api/inventory/maintenances/${route.params.maintenanceId}/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(maintenance.value)
-      });
+      result = await put(`/api/inventory/maintenances/${route.params.maintenanceId}/`, maintenance.value);
     }
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
 
     // Check if status is Closed and date_performed is not null
@@ -382,9 +499,10 @@ onMounted(async () => {
   // Load detector details
   await fetchDetectorDetails();
 
-  // If editing existing maintenance, load its details
+  // If editing existing maintenance, load its details and tasks
   if (!isNewMaintenance.value) {
     await fetchMaintenance();
+    await fetchMaintenanceTasks();
   } else {
     // If creating new maintenance, check for pre-filled data from query parameters
     const { detector, maintenance_type, status, date_due } = route.query;
@@ -599,5 +717,124 @@ textarea.form-control {
   .form-container {
     padding: 1rem;
   }
+}
+
+/* Tasks Section Styles */
+.tasks-section {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-top: 1rem;
+}
+
+.tasks-section h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.tasks-header {
+  margin-bottom: 1rem;
+}
+
+.task-type-select {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.task-type-select label {
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+
+.task-type-select select {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.btn-add-task {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  white-space: nowrap;
+}
+
+.tasks-list {
+  margin-top: 1rem;
+}
+
+.no-tasks {
+  text-align: center;
+  color: #6c757d;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.tasks-table {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr 100px;
+  border-bottom: 1px solid #ddd;
+}
+
+.task-row:last-child {
+  border-bottom: none;
+}
+
+.task-header-row {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.task-cell {
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.task-cell:first-child {
+  border-right: 1px solid #ddd;
+}
+
+.task-actions {
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

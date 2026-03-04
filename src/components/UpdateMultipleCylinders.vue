@@ -85,7 +85,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getCsrfToken } from '@/stores/auth';
+import { get, patch } from '@/utils/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -167,31 +167,20 @@ const updateMultipleCylinders = async () => {
         continue;
       }
 
-      // Get CSRF token
-      const csrfToken = await getCsrfToken();
-
       // Send request and wait for response before proceeding to next
-      const response = await fetch(`/api/inventory/cylinders/${cylinderId}/`, {
-        method: 'PATCH',  // Using PATCH to update only specified fields
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(updateData)
-      });
-      
-      results.push({ id: cylinderId, response });
+      const result = await patch(`/api/inventory/cylinders/${cylinderId}/`, updateData);
+
+      results.push({ id: cylinderId, response: result });
     }
 
     // Check if any of the requests failed
     const failedRequests = results.filter(result => !result.response.ok);
-    
+
     if (failedRequests.length > 0) {
       // Handle errors
       for (const { id, response } of results) {
         if (!response.ok) {
-          const errorData = await response.json();
+          const errorData = response.data;
           for (const [field, errors] of Object.entries(errorData)) {
             errorMessages.value.push(`Cylinder ${id}: ${field}: ${errors.join(', ')}`);
           }

@@ -18,10 +18,9 @@
         >
         <select v-model="filterStatus" @change="filterCylinders" class="filter-select">
           <option value="">All Statuses</option>
-          <option value="OP">Operational</option>
-          <option value="IS">In Stock</option>
-          <option value="OO">On Order</option>
-          <option value="MT">Empty</option>
+          <option v-for="choice in cylinderStatusChoices" :key="choice.value" :value="choice.value">
+            {{ choice.label }}
+          </option>
         </select>
         <select v-model="filterDetector" @change="filterCylinders" class="filter-select">
           <option value="">All Detectors</option>
@@ -197,6 +196,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { get } from '@/utils/api';
 
 const router = useRouter();
 
@@ -208,6 +208,7 @@ const loading = ref(true);
 const cylinderTypes = ref([]);
 const locations = ref([]);
 const detectors = ref([]);
+const cylinderStatusChoices = ref([]);
 
 // State for sorting and filtering
 const sortKey = ref('label');
@@ -252,11 +253,12 @@ onMounted(async () => {
     showEmptyCylinders.value = state.showEmptyCylinders || false;
   }
 
-  // Load cylinder types, detectors, and locations first
+  // Load cylinder types, detectors, locations, and statuses first
   await Promise.all([
     fetchCylinderTypes(),
     fetchDetectors(),
-    fetchLocations()
+    fetchLocations(),
+    fetchCylinderStatuses()
   ]);
 
   // Then load cylinders
@@ -309,11 +311,11 @@ watch([sortKey, sortDirection, searchTerm, filterStatus, filterLocation, filterD
 // Fetch cylinder types from the API
 const fetchCylinderTypes = async () => {
   try {
-    const response = await fetch('/api/inventory/cylindertypes/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/cylindertypes/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    cylinderTypes.value = await response.json();
+    cylinderTypes.value = result.data;
   } catch (error) {
     console.error('Error fetching cylinder types:', error);
   }
@@ -322,11 +324,11 @@ const fetchCylinderTypes = async () => {
 // Fetch detectors from the API
 const fetchDetectors = async () => {
   try {
-    const response = await fetch('/api/inventory/detectors/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/detectors/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    detectors.value = await response.json();
+    detectors.value = result.data;
   } catch (error) {
     console.error('Error fetching detectors:', error);
   }
@@ -335,13 +337,26 @@ const fetchDetectors = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/api/inventory/locations/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/locations/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    locations.value = await response.json();
+    locations.value = result.data;
   } catch (error) {
     console.error('Error fetching locations:', error);
+  }
+};
+
+// Fetch cylinder statuses from the API
+const fetchCylinderStatuses = async () => {
+  try {
+    const result = await get('/api/inventory/cylinder-statuses/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
+    }
+    cylinderStatusChoices.value = result.data;
+  } catch (error) {
+    console.error('Error fetching cylinder statuses:', error);
   }
 };
 
@@ -352,6 +367,11 @@ const fetchCylinders = async () => {
 
     // Build query parameters based on filters
     const params = new URLSearchParams();
+
+    // Add search filter
+    if (searchTerm.value) {
+      params.append('search', searchTerm.value);
+    }
 
     // Add status filter
     if (filterStatus.value) {
@@ -378,29 +398,28 @@ const fetchCylinders = async () => {
       params.append('expiry_date_lte', filterExpiresBefore.value);
     }
 
-    // Add cylinder number filter (for exact matches)
-    if (searchTerm.value && /^\d+$/.test(searchTerm.value)) {
-      params.append('cylinder_number', searchTerm.value);
+    // Add exclude decommissioned/empty filter (default behavior when checkbox is not selected)
+    if (!showEmptyCylinders.value) {
+      params.append('exclude_status', 'MT');
     }
 
     // Build the URL with parameters
-    let url = '/inventory/cylinders/';
+    let url = '/api/inventory/cylinders/';
     if (params.toString()) {
       url += '?' + params.toString();
     }
 
     // Fetch cylinders from the Django REST API
-    const response = await fetch(url.replace('/inventory/', '/api/inventory/'));
+    const result = await get(url);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
 
-    const cylinderData = await response.json();
-    cylinders.value = cylinderData;
+    cylinders.value = result.data;
 
-    // Run filtering after cylinders are loaded
-    performFilteringAndCalculateTotals();
+    // Apply sorting and pagination after fetching
+    performSortingAndPagination();
   } catch (error) {
     console.error('Error fetching cylinders:', error);
     // In case of error, we could show a user-friendly message
@@ -409,15 +428,11 @@ const fetchCylinders = async () => {
   }
 };
 
-// Status display mapping
+// Get status label from choices
 const getStatusDisplay = (statusValue) => {
-  const statusMap = {
-    'OP': 'Operational',
-    'IS': 'In Stock',
-    'OO': 'On Order',
-    'MT': 'Empty'
-  };
-  return statusMap[statusValue] || statusValue;
+  if (!statusValue) return 'N/A';
+  const choice = cylinderStatusChoices.value.find(c => c.value === statusValue);
+  return choice ? choice.label : statusValue;
 };
 
 // Helper functions to get related object labels using local state
@@ -458,66 +473,9 @@ const getCylinderTypeSupplier = (cylinderTypeId) => {
   return supplierMap[cylinderType.supplier] || cylinderType.supplier;
 };
 
-// Function to perform filtering and sorting, and calculate totals
-const performFilteringAndCalculateTotals = () => {
+// Function to perform sorting and pagination
+const performSortingAndPagination = () => {
   let result = [...cylinders.value];
-
-  // Apply search filter - only on label and serial (when not using backend filtering)
-  if (searchTerm.value && !(/^\d+$/.test(searchTerm.value))) {
-    const term = searchTerm.value.toLowerCase();
-    result = result.filter(cylinder =>
-      cylinder.label.toLowerCase().includes(term) ||
-      (cylinder.serial && cylinder.serial.toLowerCase().includes(term))
-    );
-  }
-
-  // Apply status filter
-  if (filterStatus.value) {
-    result = result.filter(cylinder => cylinder.status === filterStatus.value);
-  }
-
-  // Apply location filter
-  if (filterLocation.value) {
-    result = result.filter(cylinder =>
-      typeof cylinder.location === 'object' ?
-        cylinder.location.id === filterLocation.value :
-        cylinder.location === filterLocation.value
-    );
-  }
-
-  // Apply detector filter
-  if (filterDetector.value) {
-    result = result.filter(cylinder =>
-      typeof cylinder.detector === 'object' ?
-        cylinder.detector.id === filterDetector.value :
-        cylinder.detector === filterDetector.value
-    );
-  }
-
-  // Apply cylinder type filter
-  if (filterCylinderType.value) {
-    result = result.filter(cylinder =>
-      typeof cylinder.cylinder_type === 'object' ?
-        cylinder.cylinder_type.id === filterCylinderType.value :
-        cylinder.cylinder_type === filterCylinderType.value
-    );
-  }
-
-  // Apply expires before filter
-  if (filterExpiresBefore.value) {
-    const expiresBeforeDate = new Date(filterExpiresBefore.value);
-    result = result.filter(cylinder => {
-      if (!cylinder.expiry_date) return false; // Exclude cylinders without expiry dates
-      const cylinderExpiryDate = new Date(cylinder.expiry_date);
-      return cylinderExpiryDate < expiresBeforeDate;
-    });
-  }
-
-  // Apply show empty cylinders filter
-  if (!showEmptyCylinders.value) {
-    // If showEmptyCylinders is false, filter out cylinders with status "MT" (Empty)
-    result = result.filter(cylinder => cylinder.status !== 'MT');
-  }
 
   // Apply sorting
   if (sortKey.value) {
@@ -551,7 +509,7 @@ const performFilteringAndCalculateTotals = () => {
     });
   }
 
-  // Store the total count before pagination
+  // Store the total count
   totalFilteredCylindersResult.value = result.length;
 
   // Calculate total pages
@@ -563,11 +521,22 @@ const performFilteringAndCalculateTotals = () => {
   filteredCylindersResult.value = result.slice(startIndex, endIndex);
 };
 
-// Watch for changes to filter/sort/pagination parameters and re-run filtering
+// Watch for changes to filter parameters and re-fetch from API
 watch(
-  [searchTerm, filterStatus, filterLocation, filterDetector, filterCylinderType, filterExpiresBefore, showEmptyCylinders, sortKey, sortDirection, currentPage],
+  [searchTerm, filterStatus, filterLocation, filterDetector, filterCylinderType, filterExpiresBefore, showEmptyCylinders],
   () => {
-    performFilteringAndCalculateTotals();
+    // Reset to first page when filters change
+    currentPage.value = 1;
+    fetchCylinders();
+  },
+  { deep: true }
+);
+
+// Watch for changes to sort/pagination parameters and re-sort locally
+watch(
+  [sortKey, sortDirection, currentPage],
+  () => {
+    performSortingAndPagination();
   },
   { deep: true }
 );

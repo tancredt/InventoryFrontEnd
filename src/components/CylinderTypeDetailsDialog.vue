@@ -72,6 +72,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { get } from '@/utils/api';
 
 // Emit event to parent component when dialog is closed
 defineEmits(['close']);
@@ -84,13 +85,13 @@ const loading = ref(true);
 const fetchCylinderTypes = async () => {
   try {
     loading.value = true;
-    
-    const response = await fetch('/api/inventory/cylindertypes/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+
+    const result = await get('/api/inventory/cylindertypes/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    
-    cylinderTypes.value = await response.json();
+
+    cylinderTypes.value = result.data;
   } catch (error) {
     console.error('Error fetching cylinder types:', error);
     // In case of error, we could show a user-friendly message

@@ -52,12 +52,6 @@ const getCsrfToken = async () => {
 
 // Main API function that handles CSRF tokens
 export const apiCall = async (url, options = {}) => {
-  // Prepend /api to inventory URLs if not already present
-  let apiUrl = url;
-  if (url.startsWith('/inventory/') && !url.startsWith('/api/')) {
-    apiUrl = url.replace('/inventory/', '/api/inventory/');
-  }
-
   // Get the CSRF token asynchronously
   let csrfToken = await getCsrfToken();
 
@@ -86,7 +80,7 @@ export const apiCall = async (url, options = {}) => {
     console.warn('CSRF token not found but required for this request');
   }
 
-  const response = await fetch(apiUrl, mergedOptions);
+  const response = await fetch(url, mergedOptions);
 
   // If the response is JSON, parse it
   const contentType = response.headers.get('content-type');
@@ -126,15 +120,15 @@ export const put = async (url, body, options = {}) => {
     body: typeof body === 'string' ? body : JSON.stringify(body)
   });
 };
-//Not using at the moment
-/*export const patch = async (url, body, options = {}) => {
+
+export const del = async (url, options = {}) => {
+  return apiCall(url, { ...options, method: 'DELETE' });
+};
+
+export const patch = async (url, body, options = {}) => {
   return apiCall(url, {
     ...options,
     method: 'PATCH',
     body: typeof body === 'string' ? body : JSON.stringify(body)
   });
 };
-
-export const del = async (url, options = {}) => {
-  return apiCall(url, { ...options, method: 'DELETE' });
-};*/

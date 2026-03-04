@@ -323,7 +323,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { post, put } from '@/utils/api.js';
+import { post, put, get } from '@/utils/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -719,11 +719,11 @@ const saveDetector = async () => {
 // Fetch detector data if editing existing detector
 const fetchDetector = async () => {
   try {
-    const response = await fetch(`/api/inventory/detectors/${route.params.id}/`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get(`/api/inventory/detectors/${route.params.id}/`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    const data = await response.json();
+    const data = result.data;
     detector.value = {
       ...data,
       detector_model: data.detector_model || null,
@@ -756,28 +756,28 @@ const fetchDetector = async () => {
 const fetchRelatedData = async () => {
   try {
     // Fetch sensor slots for this detector
-    const slotsResponse = await fetch(`/api/inventory/sensorslots/?detector=${route.params.id}`);
-    if (slotsResponse.ok) {
-      detectorSensorSlots.value = await slotsResponse.json();
+    const slotsResult = await get(`/api/inventory/sensorslots/?detector=${route.params.id}`);
+    if (slotsResult.ok) {
+      detectorSensorSlots.value = slotsResult.data;
       console.log(detectorSensorSlots.value)
     }
 
     // Fetch sensors for this detector (for detailed sensor info in slots)
-    const sensorsResponse = await fetch(`/api/inventory/sensors/?detector=${route.params.id}`);
-    if (sensorsResponse.ok) {
-      detectorSensors.value = await sensorsResponse.json();
+    const sensorsResult = await get(`/api/inventory/sensors/?detector=${route.params.id}`);
+    if (sensorsResult.ok) {
+      detectorSensors.value = sensorsResult.data;
     }
 
     // Fetch faults for this detector
-    const faultsResponse = await fetch(`/api/inventory/detectorfaults/?detector=${route.params.id}`);
-    if (faultsResponse.ok) {
-      detectorFaults.value = await faultsResponse.json();
+    const faultsResult = await get(`/api/inventory/detectorfaults/?detector=${route.params.id}`);
+    if (faultsResult.ok) {
+      detectorFaults.value = faultsResult.data;
     }
 
     // Fetch maintenance for this detector
-    const maintenanceResponse = await fetch(`/api/inventory/maintenances/?detector=${route.params.id}`);
-    if (maintenanceResponse.ok) {
-      detectorMaintenance.value = await maintenanceResponse.json();
+    const maintenanceResult = await get(`/api/inventory/maintenances/?detector=${route.params.id}`);
+    if (maintenanceResult.ok) {
+      detectorMaintenance.value = maintenanceResult.data;
     }
   } catch (error) {
     console.error('Error fetching related data:', error);
@@ -872,11 +872,11 @@ onMounted(async () => {
 // Fetch detector models from the API
 const fetchDetectorModels = async () => {
   try {
-    const response = await fetch('/api/inventory/detectormodels/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/detectormodels/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    detectorModels.value = await response.json();
+    detectorModels.value = result.data;
   } catch (error) {
     console.error('Error fetching detector models:', error);
   }
@@ -885,11 +885,11 @@ const fetchDetectorModels = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/api/inventory/locations/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/locations/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    locations.value = await response.json();
+    locations.value = result.data;
   } catch (error) {
     console.error('Error fetching locations:', error);
   }
@@ -898,11 +898,11 @@ const fetchLocations = async () => {
 // Fetch sensor types from the API
 const fetchSensorTypes = async () => {
   try {
-    const response = await fetch('/api/inventory/sensortypes/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/sensortypes/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    sensorTypes.value = await response.json();
+    sensorTypes.value = result.data;
   } catch (error) {
     console.error('Error fetching sensor types:', error);
   }
@@ -911,11 +911,11 @@ const fetchSensorTypes = async () => {
 // Fetch detector model configurations from the API
 const fetchDetectorModelConfigurations = async () => {
   try {
-    const response = await fetch('/api/inventory/detectormodelconfigurations/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/detectormodelconfigurations/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    detectorModelConfigurations.value = await response.json();
+    detectorModelConfigurations.value = result.data;
   } catch (error) {
     console.error('Error fetching detector model configurations:', error);
   }

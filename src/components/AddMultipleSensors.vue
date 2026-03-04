@@ -92,7 +92,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getCsrfToken } from '@/stores/auth';
+import { get, post } from '@/utils/api';
 
 const router = useRouter();
 
@@ -117,11 +117,11 @@ const successMessage = ref('');
 // Fetch sensor types from the API
 const fetchSensorTypes = async () => {
   try {
-    const response = await fetch('/api/inventory/sensortypes/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/sensortypes/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    sensorTypes.value = await response.json();
+    sensorTypes.value = result.data;
   } catch (error) {
     console.error('Error fetching sensor types:', error);
   }
@@ -191,21 +191,10 @@ const addMultipleSensors = async () => {
         detector: null // Set detector to null as per requirements
       };
 
-      // Get CSRF token
-      const csrfToken = await getCsrfToken();
-
       // Send request and wait for response before proceeding to next
-      const response = await fetch('/api/inventory/sensors/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(sensorData)
-      });
-      
-      results.push({ index: i, response });
+      const result = await post('/api/inventory/sensors/', sensorData);
+
+      results.push({ index: i, response: result });
     }
 
     // Check if any of the requests failed

@@ -18,10 +18,9 @@
         >
         <select v-model="filterStatus" @change="filterSensors" class="filter-select">
           <option value="">All Statuses</option>
-          <option value="OP">Operational</option>
-          <option value="IS">In Stock</option>
-          <option value="OO">On Order</option>
-          <option value="DC">Decommissioned</option>
+          <option v-for="choice in sensorStatusChoices" :key="choice.value" :value="choice.value">
+            {{ choice.label }}
+          </option>
         </select>
         <select v-model="filterSensorType" @change="filterSensors" class="filter-select">
           <option value="">All Sensor Types</option>
@@ -192,6 +191,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { get } from '@/utils/api';
 
 const router = useRouter();
 
@@ -202,6 +202,7 @@ const loading = ref(true);
 // State for related data
 const sensorTypes = ref([]);
 const detectors = ref([]);
+const sensorStatusChoices = ref([]);
 
 // State for sorting and filtering
 const sortKey = ref('serial');
@@ -244,10 +245,11 @@ onMounted(async () => {
     showDecommissionedSensors.value = state.showDecommissionedSensors || false;
   }
 
-  // Load sensor types and detectors first
+  // Load sensor types, detectors, and statuses first
   await Promise.all([
     fetchSensorTypes(),
-    fetchDetectors()
+    fetchDetectors(),
+    fetchSensorStatuses()
   ]);
 
   // Then load sensors
@@ -299,11 +301,11 @@ watch([sortKey, sortDirection, searchTerm, filterStatus, filterSensorType, filte
 // Fetch sensor types from the API
 const fetchSensorTypes = async () => {
   try {
-    const response = await fetch('/api/inventory/sensortypes/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/sensortypes/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    sensorTypes.value = await response.json();
+    sensorTypes.value = result.data;
   } catch (error) {
     console.error('Error fetching sensor types:', error);
   }
@@ -312,13 +314,26 @@ const fetchSensorTypes = async () => {
 // Fetch detectors from the API
 const fetchDetectors = async () => {
   try {
-    const response = await fetch('/api/inventory/detectors/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/detectors/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    detectors.value = await response.json();
+    detectors.value = result.data;
   } catch (error) {
     console.error('Error fetching detectors:', error);
+  }
+};
+
+// Fetch sensor statuses from the API
+const fetchSensorStatuses = async () => {
+  try {
+    const result = await get('/api/inventory/sensor-statuses/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
+    }
+    sensorStatusChoices.value = result.data;
+  } catch (error) {
+    console.error('Error fetching sensor statuses:', error);
   }
 };
 
@@ -329,6 +344,11 @@ const fetchSensors = async () => {
 
     // Build query parameters based on filters
     const params = new URLSearchParams();
+
+    // Add search filter
+    if (searchTerm.value) {
+      params.append('search', searchTerm.value);
+    }
 
     // Add status filter
     if (filterStatus.value) {
@@ -350,24 +370,28 @@ const fetchSensors = async () => {
       params.append('expiry_date_lte', filterExpiresBefore.value);
     }
 
+    // Add exclude decommissioned filter (default behavior when checkbox is not selected)
+    if (!showDecommissionedSensors.value) {
+      params.append('exclude_status', 'DC');
+    }
+
     // Build the URL with parameters
-    let url = '/inventory/sensors/';
+    let url = '/api/inventory/sensors/';
     if (params.toString()) {
       url += '?' + params.toString();
     }
 
     // Fetch sensors from the Django REST API
-    const response = await fetch(url.replace('/inventory/', '/api/inventory/'));
+    const result = await get(url);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
 
-    const sensorData = await response.json();
-    sensors.value = sensorData;
+    sensors.value = result.data;
 
-    // Run filtering after sensors are loaded
-    performFilteringAndCalculateTotals();
+    // Apply sorting and pagination after fetching
+    performSortingAndPagination();
   } catch (error) {
     console.error('Error fetching sensors:', error);
     // In case of error, we could show a user-friendly message
@@ -376,15 +400,11 @@ const fetchSensors = async () => {
   }
 };
 
-// Status display mapping
+// Get status label from choices
 const getStatusDisplay = (statusValue) => {
-  const statusMap = {
-    'OP': 'Operational',
-    'IS': 'In Stock',
-    'OO': 'On Order',
-    'DC': 'Decommissioned'
-  };
-  return statusMap[statusValue] || statusValue;
+  if (!statusValue) return 'N/A';
+  const choice = sensorStatusChoices.value.find(c => c.value === statusValue);
+  return choice ? choice.label : statusValue;
 };
 
 // Helper functions to get related object labels using local state
@@ -445,55 +465,9 @@ const getDateStatus = (dateStr) => {
   }
 };
 
-// Function to perform filtering and sorting, and calculate totals
-const performFilteringAndCalculateTotals = () => {
+// Function to perform sorting and pagination
+const performSortingAndPagination = () => {
   let result = [...sensors.value];
-
-  // Apply search filter - only on serial and part number
-  if (searchTerm.value) {
-    const term = searchTerm.value.toLowerCase();
-    result = result.filter(sensor =>
-      (sensor.serial && sensor.serial.toLowerCase().includes(term)) ||
-      (getSensorTypeLabel(sensor.sensor_type).toLowerCase().includes(term))
-    );
-  }
-
-  // Apply status filter
-  if (filterStatus.value) {
-    result = result.filter(sensor => sensor.status === filterStatus.value);
-  }
-
-  // Apply sensor type filter
-  if (filterSensorType.value) {
-    result = result.filter(sensor =>
-      typeof sensor.sensor_type === 'object' ?
-        sensor.sensor_type.id === filterSensorType.value :
-        sensor.sensor_type === filterSensorType.value
-    );
-  }
-
-  // Apply detector filter
-  if (filterDetector.value) {
-    result = result.filter(sensor =>
-      sensor.detector === filterDetector.value
-    );
-  }
-
-  // Apply expires before filter
-  if (filterExpiresBefore.value) {
-    const expiresBeforeDate = new Date(filterExpiresBefore.value);
-    result = result.filter(sensor => {
-      if (!sensor.expiry_date) return false; // Exclude sensors without expiry dates
-      const sensorExpiryDate = new Date(sensor.expiry_date);
-      return sensorExpiryDate < expiresBeforeDate;
-    });
-  }
-
-  // Apply show decommissioned sensors filter
-  if (!showDecommissionedSensors.value) {
-    // If showDecommissionedSensors is false, filter out sensors with status "DC" (Decommissioned)
-    result = result.filter(sensor => sensor.status !== 'DC');
-  }
 
   // Apply sorting
   if (sortKey.value) {
@@ -527,7 +501,7 @@ const performFilteringAndCalculateTotals = () => {
     });
   }
 
-  // Store the total count before pagination
+  // Store the total count
   totalFilteredSensorsResult.value = result.length;
 
   // Calculate total pages
@@ -539,11 +513,22 @@ const performFilteringAndCalculateTotals = () => {
   filteredSensorsResult.value = result.slice(startIndex, endIndex);
 };
 
-// Watch for changes to filter/sort/pagination parameters and re-run filtering
+// Watch for changes to filter parameters and re-fetch from API
 watch(
-  [searchTerm, filterStatus, filterSensorType, filterDetector, filterExpiresBefore, showDecommissionedSensors, sortKey, sortDirection, currentPage],
+  [searchTerm, filterStatus, filterSensorType, filterDetector, filterExpiresBefore, showDecommissionedSensors],
   () => {
-    performFilteringAndCalculateTotals();
+    // Reset to first page when filters change
+    currentPage.value = 1;
+    fetchSensors();
+  },
+  { deep: true }
+);
+
+// Watch for changes to sort/pagination parameters and re-sort locally
+watch(
+  [sortKey, sortDirection, currentPage],
+  () => {
+    performSortingAndPagination();
   },
   { deep: true }
 );

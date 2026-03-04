@@ -11,16 +11,15 @@
       <div v-show="showFilters" class="search-and-filters-popover">
         <select v-model="filterStatus" @change="filterMaintenances" class="filter-select">
           <option value="">All Statuses</option>
-          <option value="SC">Scheduled</option>
-          <option value="OP">Open</option>
-          <option value="CL">Closed</option>
+          <option v-for="choice in maintenanceStatusChoices" :key="choice.value" :value="choice.value">
+            {{ choice.label }}
+          </option>
         </select>
         <select v-model="filterMaintenanceType" @change="filterMaintenances" class="filter-select">
           <option value="">All Maintenance Types</option>
-          <option value="SV">Major Service</option>
-          <option value="MS">Minor Service</option>
-          <option value="BT">Battery Replacement</option>
-          <option value="FC">Filter Replacement</option>
+          <option v-for="choice in maintenanceTypeChoices" :key="choice.value" :value="choice.value">
+            {{ choice.label }}
+          </option>
         </select>
         <select v-model="filterDetector" @change="filterMaintenances" class="filter-select">
           <option value="">All Detectors</option>
@@ -146,6 +145,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { get } from '@/utils/api';
 
 const router = useRouter();
 
@@ -155,6 +155,8 @@ const loading = ref(true);
 
 // State for related data
 const detectors = ref([]);
+const maintenanceTypeChoices = ref([]);
+const maintenanceStatusChoices = ref([]);
 
 // State for sorting and filtering
 const sortKey = ref('date_due');
@@ -197,6 +199,12 @@ onMounted(async () => {
   // Load detectors first
   await fetchDetectors();
 
+  // Load maintenance types and statuses
+  await Promise.all([
+    fetchMaintenanceTypes(),
+    fetchMaintenanceStatuses()
+  ]);
+
   // Then load maintenances
   await fetchMaintenances();
 });
@@ -227,13 +235,39 @@ watch([sortKey, sortDirection, searchTerm, filterStatus, filterMaintenanceType, 
 // Fetch detectors from the API
 const fetchDetectors = async () => {
   try {
-    const response = await fetch('/api/inventory/detectors/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/detectors/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    detectors.value = await response.json();
+    detectors.value = result.data;
   } catch (error) {
     console.error('Error fetching detectors:', error);
+  }
+};
+
+// Fetch maintenance types from the API
+const fetchMaintenanceTypes = async () => {
+  try {
+    const result = await get('/api/inventory/maintenance-types/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
+    }
+    maintenanceTypeChoices.value = result.data;
+  } catch (error) {
+    console.error('Error fetching maintenance types:', error);
+  }
+};
+
+// Fetch maintenance statuses from the API
+const fetchMaintenanceStatuses = async () => {
+  try {
+    const result = await get('/api/inventory/maintenance-statuses/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
+    }
+    maintenanceStatusChoices.value = result.data;
+  } catch (error) {
+    console.error('Error fetching maintenance statuses:', error);
   }
 };
 
@@ -265,24 +299,28 @@ const fetchMaintenances = async () => {
       params.append('date_due_lte', filterDueBefore.value);
     }
 
+    // Add exclude complete filter (default behavior when checkbox is not selected)
+    if (!showCompleteMaintenances.value) {
+      params.append('exclude_status', 'CL');
+    }
+
     // Build the URL with parameters
-    let url = '/inventory/maintenances/';
+    let url = '/api/inventory/maintenances/';
     if (params.toString()) {
       url += '?' + params.toString();
     }
 
     // Fetch maintenances from the Django REST API
-    const response = await fetch(url.replace('/inventory/', '/api/inventory/'));
+    const result = await get(url);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
 
-    const maintenanceData = await response.json();
-    maintenances.value = maintenanceData;
+    maintenances.value = result.data;
 
-    // Run filtering after maintenances are loaded
-    performFilteringAndCalculateTotals();
+    // Apply sorting and pagination after fetching
+    performSortingAndPagination();
   } catch (error) {
     console.error('Error fetching maintenances:', error);
     // In case of error, we could show a user-friendly message
@@ -291,25 +329,18 @@ const fetchMaintenances = async () => {
   }
 };
 
-// Maintenance type display mapping
+// Get maintenance type label from choices
 const getMaintenanceTypeDisplay = (typeValue) => {
-  const typeMap = {
-    'SV': 'Major Service',
-    'MS': 'Minor Service',
-    'BT': 'Battery Replacement',
-    'FC': 'Filter Replacement'
-  };
-  return typeMap[typeValue] || typeValue;
+  if (!typeValue) return 'N/A';
+  const choice = maintenanceTypeChoices.value.find(c => c.value === typeValue);
+  return choice ? choice.label : typeValue;
 };
 
-// Maintenance status display mapping
+// Get maintenance status label from choices
 const getMaintenanceStatusDisplay = (statusValue) => {
-  const statusMap = {
-    'SC': 'Scheduled',
-    'OP': 'Open',
-    'CL': 'Closed'
-  };
-  return statusMap[statusValue] || statusValue;
+  if (!statusValue) return 'N/A';
+  const choice = maintenanceStatusChoices.value.find(c => c.value === statusValue);
+  return choice ? choice.label : statusValue;
 };
 
 // Status display mapping (for the PDF function)
@@ -336,54 +367,9 @@ const getDetectorLabel = (detectorId) => {
   return detector ? detector.label : 'Unknown Detector';
 };
 
-// Function to perform filtering and sorting, and calculate totals
-const performFilteringAndCalculateTotals = () => {
+// Function to perform sorting and pagination
+const performSortingAndPagination = () => {
   let result = [...maintenances.value];
-
-  // Apply search filter - only on serial, type and detector
-  if (searchTerm.value) {
-    const term = searchTerm.value.toLowerCase();
-    result = result.filter(maintenance =>
-      (maintenance.serial && maintenance.serial.toLowerCase().includes(term)) ||
-      (getMaintenanceTypeDisplay(maintenance.maintenance_type).toLowerCase().includes(term)) ||
-      (getDetectorLabel(maintenance.detector).toLowerCase().includes(term))
-    );
-  }
-
-  // Apply status filter
-  if (filterStatus.value) {
-    result = result.filter(maintenance => maintenance.status === filterStatus.value);
-  }
-
-  // Apply maintenance type filter
-  if (filterMaintenanceType.value) {
-    result = result.filter(maintenance => maintenance.maintenance_type === filterMaintenanceType.value);
-  }
-
-  // Apply detector filter
-  if (filterDetector.value) {
-    result = result.filter(maintenance =>
-      typeof maintenance.detector === 'object' ?
-        maintenance.detector.id === filterDetector.value :
-        maintenance.detector === filterDetector.value
-    );
-  }
-
-  // Apply due before filter
-  if (filterDueBefore.value) {
-    const dueBeforeDate = new Date(filterDueBefore.value);
-    result = result.filter(maintenance => {
-      if (!maintenance.date_due) return false; // Exclude maintenances without due dates
-      const maintenanceDueDate = new Date(maintenance.date_due);
-      return maintenanceDueDate < dueBeforeDate;
-    });
-  }
-
-  // Apply show closed maintenances filter
-  if (!showCompleteMaintenances.value) {
-    // If showCompleteMaintenances is false, filter out maintenances with status "CL" (Closed)
-    result = result.filter(maintenance => maintenance.status !== 'CL');
-  }
 
   // Apply sorting
   if (sortKey.value) {
@@ -411,7 +397,7 @@ const performFilteringAndCalculateTotals = () => {
     });
   }
 
-  // Store the total count before pagination
+  // Store the total count
   totalFilteredMaintenancesResult.value = result.length;
 
   // Calculate total pages
@@ -423,11 +409,22 @@ const performFilteringAndCalculateTotals = () => {
   filteredMaintenancesResult.value = result.slice(startIndex, endIndex);
 };
 
-// Watch for changes to filter/sort/pagination parameters and re-run filtering
+// Watch for changes to filter parameters and re-fetch from API
 watch(
-  [searchTerm, filterStatus, filterMaintenanceType, filterDetector, filterDueBefore, showCompleteMaintenances, sortKey, sortDirection, currentPage],
+  [searchTerm, filterStatus, filterMaintenanceType, filterDetector, filterDueBefore, showCompleteMaintenances],
   () => {
-    performFilteringAndCalculateTotals();
+    // Reset to first page when filters change
+    currentPage.value = 1;
+    fetchMaintenances();
+  },
+  { deep: true }
+);
+
+// Watch for changes to sort/pagination parameters and re-sort locally
+watch(
+  [sortKey, sortDirection, currentPage],
+  () => {
+    performSortingAndPagination();
   },
   { deep: true }
 );

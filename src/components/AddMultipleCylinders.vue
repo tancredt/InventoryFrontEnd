@@ -102,7 +102,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getCsrfToken } from '@/stores/auth';
+import { get, post } from '@/utils/api';
 
 const router = useRouter();
 
@@ -129,11 +129,11 @@ const successMessage = ref('');
 // Fetch cylinder types from the API
 const fetchCylinderTypes = async () => {
   try {
-    const response = await fetch('/api/inventory/cylindertypes/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/cylindertypes/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    cylinderTypes.value = await response.json();
+    cylinderTypes.value = result.data;
   } catch (error) {
     console.error('Error fetching cylinder types:', error);
   }
@@ -142,11 +142,11 @@ const fetchCylinderTypes = async () => {
 // Fetch locations from the API
 const fetchLocations = async () => {
   try {
-    const response = await fetch('/api/inventory/locations/');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await get('/api/inventory/locations/');
+    if (!result.ok) {
+      throw new Error(`HTTP error! status: ${result.status}`);
     }
-    locations.value = await response.json();
+    locations.value = result.data;
   } catch (error) {
     console.error('Error fetching locations:', error);
   }
@@ -224,21 +224,10 @@ const addMultipleCylinders = async () => {
         serial: null  // Serial can be null initially
       };
 
-      // Get CSRF token
-      const csrfToken = await getCsrfToken();
-
       // Send request and wait for response before proceeding to next
-      const response = await fetch('/api/inventory/cylinders/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(cylinderData)
-      });
+      const result = await post('/api/inventory/cylinders/', cylinderData);
 
-      results.push({ index: i, response });
+      results.push({ index: i, response: result });
     }
 
     // Check if any of the requests failed

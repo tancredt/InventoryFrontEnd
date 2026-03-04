@@ -62,7 +62,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getCsrfToken } from '@/stores/auth';
+import { get, patch } from '@/utils/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -85,9 +85,9 @@ const sensorGasChoices = ref([]);
 const fetchSensorSlotDetails = async () => {
   try {
     // Fetch sensor gas choices first
-    const gasResponse = await fetch('/api/inventory/sensor-gases/');
-    if (gasResponse.ok) {
-      sensorGasChoices.value = await gasResponse.json();
+    const gasResult = await get('/api/inventory/sensor-gases/');
+    if (gasResult.ok) {
+      sensorGasChoices.value = gasResult.data;
     }
 
     let slotData;
@@ -96,11 +96,11 @@ const fetchSensorSlotDetails = async () => {
     // If route has sensorGas, we need to find the slot for this detector and sensor gas
     if (route.params.sensorGas) {
       // Fetch all sensor slots for this detector
-      const slotsResponse = await fetch(`/api/inventory/sensorslots/?detector=${detectorId.value}`);
-      if (!slotsResponse.ok) {
-        throw new Error(`HTTP error! status: ${slotsResponse.status}`);
+      const slotsResult = await get(`/api/inventory/sensorslots/?detector=${detectorId.value}`);
+      if (!slotsResult.ok) {
+        throw new Error(`HTTP error! status: ${slotsResult.status}`);
       }
-      const allSlots = await slotsResponse.json();
+      const allSlots = slotsResult.data;
 
       // Find the slot that matches the sensor gas
       // Prefer slots that don't have a sensor assigned yet, otherwise pick the first one
@@ -123,18 +123,17 @@ const fetchSensorSlotDetails = async () => {
       slotData = foundSlotData;
     } else {
       // Fetch the sensor slot details using the slot ID (old route format)
-      const slotResponse = await fetch(`/api/inventory/sensorslots/${slotId.value}`);
-      if (!slotResponse.ok) {
-        throw new Error(`HTTP error! status: ${slotResponse.status}`);
+      const slotResult = await get(`/api/inventory/sensorslots/${slotId.value}`);
+      if (!slotResult.ok) {
+        throw new Error(`HTTP error! status: ${slotResult.status}`);
       }
-      slotData = await slotResponse.json();
+      slotData = slotResult.data;
     }
 
     // Fetch detector details
-    const detectorResponse = await fetch(`/api/inventory/detectors/${detectorId.value}/`);
-    if (detectorResponse.ok) {
-      const detectorData = await detectorResponse.json();
-      detectorLabel.value = detectorData.label;
+    const detectorResult = await get(`/api/inventory/detectors/${detectorId.value}/`);
+    if (detectorResult.ok) {
+      detectorLabel.value = detectorResult.data.label;
     }
 
     // Set gas label from the slot data
@@ -142,9 +141,9 @@ const fetchSensorSlotDetails = async () => {
 
     // Set current sensor if exists
     if (slotData.sensor) {
-      const sensorResponse = await fetch(`/api/inventory/sensors/${slotData.sensor}/`);
-      if (sensorResponse.ok) {
-        const sensorData = await sensorResponse.json();
+      const sensorResult = await get(`/api/inventory/sensors/${slotData.sensor}/`);
+      if (sensorResult.ok) {
+        const sensorData = sensorResult.data;
         currentSensorLabel.value = sensorData.serial || 'N/A';
         // Don't pre-select the current sensor since we want the user to select a new one
       }
@@ -153,17 +152,17 @@ const fetchSensorSlotDetails = async () => {
     }
 
     // Fetch available sensors matching the sensor gas that are in stock
-    const sensorsResponse = await fetch(`/api/inventory/sensors/?status=IS`);
-    if (sensorsResponse.ok) {
-      const allSensors = await sensorsResponse.json();
+    const sensorsResult = await get(`/api/inventory/sensors/?status=IS`);
+    if (sensorsResult.ok) {
+      const allSensors = sensorsResult.data;
       // Filter sensors by matching sensor gas through sensor_type
-      const sensorTypesResponse = await fetch('/api/inventory/sensortypes/');
-      if (sensorTypesResponse.ok) {
-        const sensorTypes = await sensorTypesResponse.json();
+      const sensorTypesResult = await get('/api/inventory/sensortypes/');
+      if (sensorTypesResult.ok) {
+        const sensorTypes = sensorTypesResult.data;
         const matchingSensorTypeIds = sensorTypes
           .filter(st => st.sensorgas === slotData.sensorgas)
           .map(st => st.id);
-        availableSensors.value = allSensors.filter(s => 
+        availableSensors.value = allSensors.filter(s =>
           s.status === 'IS' && matchingSensorTypeIds.includes(s.sensor_type)
         );
       }
@@ -198,7 +197,7 @@ const saveSensorSlot = async () => {
   try {
     // If a new sensor was selected, update the sensor's detector and install date
     if (selectedSensor.value) {
-      
+
       const sensorPayload = {
         detector: parseInt(detectorId.value),  // Convert string ID to integer
         status: 'OP'  // Set status to Operational
@@ -208,22 +207,11 @@ const saveSensorSlot = async () => {
         sensorPayload.install_date = installDate.value;
       }
 
-      // Get CSRF token
-      const csrfToken = await getCsrfToken();
-
       // Update the sensor's detector and install date
-      const sensorResponse = await fetch(`/api/inventory/sensors/${selectedSensor.value}/`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',  // Include CSRF token in header
-        },
-        credentials: 'include',  // Important for session cookies
-        body: JSON.stringify(sensorPayload)
-      });
+      const result = await patch(`/api/inventory/sensors/${selectedSensor.value}/`, sensorPayload);
 
-      if (!sensorResponse.ok) {
-        throw new Error(`HTTP error! status: ${sensorResponse.status}`);
+      if (!result.ok) {
+        throw new Error(`HTTP error! status: ${result.status}`);
       }
     }
 
