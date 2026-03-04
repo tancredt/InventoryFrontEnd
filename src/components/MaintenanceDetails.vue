@@ -37,18 +37,13 @@
               </select>
             </div>
 
-            <div class="form-group full-width">
-              <label for="notes">Notes:</label>
-              <textarea id="notes" v-model="maintenance.notes" class="form-control" :disabled="isComplete" rows="3"></textarea>
-            </div>
-
             <div class="divider"></div>
 
             <div class="form-group full-width">
               <label for="maintenanceTasks">Maintenance Tasks:</label>
               <div class="multi-select-dropdown" v-click-outside="closeTaskDropdown">
-                <div 
-                  class="multi-select-input" 
+                <div
+                  class="multi-select-input"
                   @click="toggleTaskDropdown"
                   :class="{ 'active': showTaskDropdown }"
                 >
@@ -60,9 +55,9 @@
                 </div>
                 <div v-show="showTaskDropdown" class="multi-select-options">
                   <label v-for="choice in maintenanceTaskTypeChoices" :key="choice.value" class="checkbox-option">
-                    <input 
-                      type="checkbox" 
-                      :value="choice.value" 
+                    <input
+                      type="checkbox"
+                      :value="choice.value"
                       v-model="selectedTaskTypes"
                       :disabled="isComplete"
                     />
@@ -70,6 +65,11 @@
                   </label>
                 </div>
               </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="notes">Notes:</label>
+              <textarea id="notes" v-model="maintenance.notes" class="form-control" :disabled="isComplete" rows="3"></textarea>
             </div>
 
             <div class="form-group">
