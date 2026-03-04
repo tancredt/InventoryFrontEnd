@@ -301,39 +301,69 @@ const syncSelectedTaskTypes = () => {
   selectedTaskTypes.value = maintenanceTasks.value.map(task => task.task_type);
 };
 
-// Watch for changes in selectedTaskTypes and update maintenanceTasks
-watch(selectedTaskTypes, async (newTaskTypes, oldTaskTypes) => {
+// Track task changes for batch save
+const tasksToAdd = ref([]);
+const tasksToRemove = ref([]);
+
+// Watch for changes in selectedTaskTypes and track for batch save
+watch(selectedTaskTypes, (newTaskTypes, oldTaskTypes) => {
   // Skip if component is not mounted yet or if maintenance is complete
   if (isComplete.value) return;
   
   const addedTypes = newTaskTypes.filter(type => !oldTaskTypes.includes(type));
   const removedTypes = oldTaskTypes.filter(type => !newTaskTypes.includes(type));
 
-  // Add new tasks
+  // Track tasks to add
   for (const taskType of addedTypes) {
-    try {
-      if (!isNewMaintenance.value) {
-        const result = await post('/api/inventory/maintenancetasks/', {
-          maintenance: parseInt(route.params.maintenanceId),
-          task_type: taskType
-        });
-        if (result.ok) {
-          maintenanceTasks.value.push(result.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error adding task:', error);
+    if (!tasksToAdd.value.includes(taskType)) {
+      tasksToAdd.value.push(taskType);
     }
   }
 
-  // Remove tasks
+  // Track tasks to remove
   for (const taskType of removedTypes) {
-    const taskToRemove = maintenanceTasks.value.find(task => task.task_type === taskType);
-    if (taskToRemove) {
-      await removeTask(taskToRemove, true); // true = silent mode (no confirmation)
+    if (!tasksToRemove.value.includes(taskType)) {
+      tasksToRemove.value.push(taskType);
     }
   }
 }, { deep: true });
+
+// Save tasks after maintenance is saved
+const saveTasks = async (maintenanceId) => {
+  try {
+    // Remove tasks first
+    for (const taskType of tasksToRemove.value) {
+      const taskToRemove = maintenanceTasks.value.find(task => task.task_type === taskType);
+      if (taskToRemove && taskToRemove.id) {
+        const result = await del(`/api/inventory/maintenancetasks/${taskToRemove.id}/`);
+        if (!result.ok) {
+          console.error('Failed to remove task:', taskType);
+        } else {
+          maintenanceTasks.value = maintenanceTasks.value.filter(t => t.id !== taskToRemove.id);
+        }
+      }
+    }
+
+    // Add new tasks
+    for (const taskType of tasksToAdd.value) {
+      const result = await post('/api/inventory/maintenancetasks/', {
+        maintenance: maintenanceId,
+        task_type: taskType
+      });
+      if (result.ok) {
+        maintenanceTasks.value.push(result.data);
+      } else {
+        console.error('Failed to add task:', taskType);
+      }
+    }
+
+    // Clear the tracking arrays
+    tasksToAdd.value = [];
+    tasksToRemove.value = [];
+  } catch (error) {
+    console.error('Error saving tasks:', error);
+  }
+};
 
 // Fetch maintenance tasks for the current maintenance
 const fetchMaintenanceTasks = async () => {
@@ -422,16 +452,26 @@ const performSave = async () => {
     }
 
     let result;
+    let savedMaintenanceId;
     if (isNewMaintenance.value) {
       // Creating a new maintenance
       result = await post('/api/inventory/maintenances/', maintenance.value);
+      if (result.ok) {
+        savedMaintenanceId = result.data.id;
+      }
     } else {
       // Updating an existing maintenance
+      savedMaintenanceId = route.params.maintenanceId;
       result = await put(`/api/inventory/maintenances/${route.params.maintenanceId}/`, maintenance.value);
     }
 
     if (!result.ok) {
       throw new Error(`HTTP error! status: ${result.status}`);
+    }
+
+    // Save tasks after maintenance is saved
+    if (savedMaintenanceId && (tasksToAdd.value.length > 0 || tasksToRemove.value.length > 0)) {
+      await saveTasks(savedMaintenanceId);
     }
 
     // Check if status is Closed and date_performed is not null
