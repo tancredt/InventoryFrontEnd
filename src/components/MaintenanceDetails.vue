@@ -446,11 +446,14 @@ const performSave = async () => {
 // Function to handle the status change dialog response
 const handleStatusChangeDialog = (shouldChange) => {
   if (shouldChange) {
-    // Change status to Closed ('CL')
+    // Change status to Closed ('CL') and proceed with saving
     maintenance.value.status = 'CL';
+    showStatusChangeDialog.value = false;
+    performSave();
+  } else {
+    // User declined, just close the dialog without saving
+    showStatusChangeDialog.value = false;
   }
-  showStatusChangeDialog.value = false;
-  // Now proceed with saving
 };
 
 // Close dialog and return to appropriate page based on where user came from
