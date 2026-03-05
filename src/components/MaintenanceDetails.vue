@@ -523,23 +523,24 @@ const applyPreset = () => {
   }
   
   const days = parseInt(selectedPreset.value);
-  const today = new Date();
-  const futureDate = new Date(today);
-  const originalDay = today.getDate();
+  // Calculate from the date performed, not today
+  const baseDate = maintenance.value.date_performed ? new Date(maintenance.value.date_performed) : new Date();
+  const futureDate = new Date(baseDate);
+  const originalDay = baseDate.getDate();
   
   // For month-based presets, calculate by adding months to preserve day of month
   if (days === 30) {
     // 1 Month - add 1 month
-    futureDate.setMonth(today.getMonth() + 1);
+    futureDate.setMonth(baseDate.getMonth() + 1);
   } else if (days === 90) {
     // 3 Months - add 3 months
-    futureDate.setMonth(today.getMonth() + 3);
+    futureDate.setMonth(baseDate.getMonth() + 3);
   } else if (days === 180) {
     // 6 Months - add 6 months
-    futureDate.setMonth(today.getMonth() + 6);
+    futureDate.setMonth(baseDate.getMonth() + 6);
   } else {
     // For other presets (7 days, 365 days), add days
-    futureDate.setDate(today.getDate() + days);
+    futureDate.setDate(baseDate.getDate() + days);
   }
   
   // Check if the day rolled over due to invalid day in target month
