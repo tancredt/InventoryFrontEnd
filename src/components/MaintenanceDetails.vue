@@ -494,29 +494,35 @@ const handleScheduleNewDialog = (shouldSchedule) => {
 };
 
 // Confirm and schedule new maintenance
-const confirmScheduleNewMaintenance = () => {
+const confirmScheduleNewMaintenance = async () => {
   showScheduleNewDialog.value = false;
 
-  // Prepare the new maintenance data
-  const newMaintenanceData = {
-    detector: maintenance.value.detector,
-    maintenance_type: maintenance.value.maintenance_type,
-    status: 'SC', // Scheduled
-    date_due: scheduledDateDue.value,
-    date_performed: null,
-    performed_by: ''
-  };
+  try {
+    // Prepare the new maintenance data
+    const newMaintenanceData = {
+      detector: maintenance.value.detector,
+      maintenance_type: maintenance.value.maintenance_type,
+      status: 'SC', // Scheduled
+      date_due: scheduledDateDue.value,
+      date_performed: null,
+      performed_by: '',
+      notes: ''
+    };
 
-  // Navigate to the new maintenance form with the pre-filled data
-  const query = new URLSearchParams({
-    detector: newMaintenanceData.detector,
-    maintenance_type: newMaintenanceData.maintenance_type,
-    status: newMaintenanceData.status,
-    date_due: newMaintenanceData.date_due
-  }).toString();
+    // Create the new maintenance record
+    const result = await post('/api/inventory/maintenances/', newMaintenanceData);
 
-  // Redirect to create a new maintenance with pre-filled data
-  router.push(`/maintenances/${newMaintenanceData.detector}?${query}`);
+    if (result.ok) {
+      // Show success dialog
+      showSuccessDialog.value = true;
+    } else {
+      console.error('Failed to schedule new maintenance:', result.data);
+      alert('Error scheduling new maintenance: ' + (result.data.message || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Error scheduling new maintenance:', error);
+    alert('Error scheduling new maintenance: ' + error.message);
+  }
 };
 
 // Close schedule new dialog without scheduling
