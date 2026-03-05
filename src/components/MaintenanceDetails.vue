@@ -125,17 +125,37 @@
       <div class="dialog-box" @click.stop>
         <h3>Schedule New Maintenance?</h3>
         <p>Do you wish to schedule a new maintenance?</p>
+        
         <div class="form-group">
-          <label for="scheduledDate">Proposed Date Due:</label>
+          <label for="schedulePreset">Quick Select:</label>
+          <select
+            id="schedulePreset"
+            v-model="selectedPreset"
+            @change="applyPreset"
+            class="form-control"
+          >
+            <option value="">Custom Date</option>
+            <option value="7">1 Week</option>
+            <option value="30">1 Month</option>
+            <option value="90">3 Months</option>
+            <option value="180">6 Months</option>
+            <option value="365">1 Year</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="scheduledDate">Date Due *</label>
           <input
             id="scheduledDate"
             type="date"
             v-model="scheduledDateDue"
             class="form-control"
+            required
           />
         </div>
+        
         <div class="dialog-actions">
-          <button @click="confirmScheduleNewMaintenance" class="btn btn-primary">Schedule</button>
+          <button @click="confirmScheduleNewMaintenance" class="btn btn-primary" :disabled="!scheduledDateDue">Schedule</button>
           <button @click="closeScheduleNewDialog" class="btn btn-secondary">Cancel</button>
         </div>
       </div>
@@ -190,6 +210,7 @@ const showStatusChangeDialog = ref(false);
 const showMissingDatePerformedWarning = ref(false);
 const showScheduleNewDialog = ref(false);
 const scheduledDateDue = ref('');
+const selectedPreset = ref('');
 
 // Check if we're creating a new maintenance or editing an existing one
 const isNewMaintenance = computed(() => !route.params.maintenanceId || route.params.maintenanceId === 'new');
@@ -485,12 +506,27 @@ const handleScheduleNewDialog = (shouldSchedule) => {
     const sixMonthsAfterOldDate = new Date(oldDatePerformed);
     sixMonthsAfterOldDate.setMonth(sixMonthsAfterOldDate.getMonth() + 6);
     scheduledDateDue.value = sixMonthsAfterOldDate.toISOString().split('T')[0];
+    // Reset preset to custom
+    selectedPreset.value = '';
     // Show the dialog with the proposed date
     showScheduleNewDialog.value = true;
   } else {
     // Just show the success dialog
     showSuccessDialog.value = true;
   }
+};
+
+// Apply preset date selection
+const applyPreset = () => {
+  if (!selectedPreset.value) {
+    return;
+  }
+  
+  const days = parseInt(selectedPreset.value);
+  const today = new Date();
+  const futureDate = new Date(today);
+  futureDate.setDate(today.getDate() + days);
+  scheduledDateDue.value = futureDate.toISOString().split('T')[0];
 };
 
 // Confirm and schedule new maintenance
@@ -756,6 +792,10 @@ textarea.form-control {
   outline: none;
   border-color: #42b883;
   box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
+}
+
+.dialog-box select.form-control {
+  cursor: pointer;
 }
 
 .dialog-actions {
