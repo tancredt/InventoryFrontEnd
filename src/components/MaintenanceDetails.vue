@@ -382,6 +382,12 @@ const saveMaintenance = async () => {
       return;
     }
 
+    // If date performed is set but status is not Closed, ask if user wants to change status
+    if (maintenance.value.date_performed && maintenance.value.status !== 'CL') {
+      showStatusChangeDialog.value = true;
+      return;
+    }
+
     // If we reach here, all required fields are filled and validated
     // Proceed with saving
     await performSave();
