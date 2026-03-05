@@ -121,13 +121,22 @@
     </div>
 
     <!-- Schedule New Maintenance Dialog -->
-    <div v-if="showScheduleNewDialog" class="dialog-overlay" @click="handleScheduleNewDialog(false)">
+    <div v-if="showScheduleNewDialog" class="dialog-overlay" @click="closeScheduleNewDialog">
       <div class="dialog-box" @click.stop>
         <h3>Schedule New Maintenance?</h3>
         <p>Do you wish to schedule a new maintenance?</p>
+        <div class="form-group">
+          <label for="scheduledDate">Proposed Date Due:</label>
+          <input
+            id="scheduledDate"
+            type="date"
+            v-model="scheduledDateDue"
+            class="form-control"
+          />
+        </div>
         <div class="dialog-actions">
-          <button @click="handleScheduleNewDialog(true)" class="btn btn-primary">Yes</button>
-          <button @click="handleScheduleNewDialog(false)" class="btn btn-secondary">No</button>
+          <button @click="confirmScheduleNewMaintenance" class="btn btn-primary">Schedule</button>
+          <button @click="closeScheduleNewDialog" class="btn btn-secondary">Cancel</button>
         </div>
       </div>
     </div>
@@ -180,6 +189,7 @@ const showSuccessDialog = ref(false);
 const showStatusChangeDialog = ref(false);
 const showMissingDatePerformedWarning = ref(false);
 const showScheduleNewDialog = ref(false);
+const scheduledDateDue = ref('');
 
 // Check if we're creating a new maintenance or editing an existing one
 const isNewMaintenance = computed(() => !route.params.maintenanceId || route.params.maintenanceId === 'new');
@@ -468,41 +478,51 @@ const closeMissingDatePerformedWarning = () => {
 };
 
 // Function to handle the schedule new maintenance dialog response
-const handleScheduleNewDialog = async (shouldSchedule) => {
-  showScheduleNewDialog.value = false;
-
+const handleScheduleNewDialog = (shouldSchedule) => {
   if (shouldSchedule) {
     // Calculate date 6 months after the old date performed
     const oldDatePerformed = new Date(maintenance.value.date_performed);
     const sixMonthsAfterOldDate = new Date(oldDatePerformed);
     sixMonthsAfterOldDate.setMonth(sixMonthsAfterOldDate.getMonth() + 6);
-    const futureDate = sixMonthsAfterOldDate.toISOString().split('T')[0];
-
-    // Prepare the new maintenance data
-    const newMaintenanceData = {
-      detector: maintenance.value.detector,
-      maintenance_type: maintenance.value.maintenance_type,
-      status: 'SC', // Scheduled
-      date_due: futureDate,
-      date_performed: null,
-      performed_by: ''
-    };
-
-    // Navigate to the new maintenance form with the pre-filled data
-    // We'll pass the data as query parameters
-    const query = new URLSearchParams({
-      detector: newMaintenanceData.detector,
-      maintenance_type: newMaintenanceData.maintenance_type,
-      status: newMaintenanceData.status,
-      date_due: newMaintenanceData.date_due
-    }).toString();
-
-    // Redirect to create a new maintenance with pre-filled data
-    router.push(`/maintenances/${newMaintenanceData.detector}?${query}`);
+    scheduledDateDue.value = sixMonthsAfterOldDate.toISOString().split('T')[0];
+    // Show the dialog with the proposed date
+    showScheduleNewDialog.value = true;
   } else {
     // Just show the success dialog
     showSuccessDialog.value = true;
   }
+};
+
+// Confirm and schedule new maintenance
+const confirmScheduleNewMaintenance = () => {
+  showScheduleNewDialog.value = false;
+
+  // Prepare the new maintenance data
+  const newMaintenanceData = {
+    detector: maintenance.value.detector,
+    maintenance_type: maintenance.value.maintenance_type,
+    status: 'SC', // Scheduled
+    date_due: scheduledDateDue.value,
+    date_performed: null,
+    performed_by: ''
+  };
+
+  // Navigate to the new maintenance form with the pre-filled data
+  const query = new URLSearchParams({
+    detector: newMaintenanceData.detector,
+    maintenance_type: newMaintenanceData.maintenance_type,
+    status: newMaintenanceData.status,
+    date_due: newMaintenanceData.date_due
+  }).toString();
+
+  // Redirect to create a new maintenance with pre-filled data
+  router.push(`/maintenances/${newMaintenanceData.detector}?${query}`);
+};
+
+// Close schedule new dialog without scheduling
+const closeScheduleNewDialog = () => {
+  showScheduleNewDialog.value = false;
+  showSuccessDialog.value = true;
 };
 
 // Initialize component
@@ -703,6 +723,33 @@ textarea.form-control {
 .dialog-box h3 {
   margin-top: 0;
   color: #2c3e50;
+}
+
+.dialog-box .form-group {
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.dialog-box .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.dialog-box .form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.dialog-box .form-control:focus {
+  outline: none;
+  border-color: #42b883;
+  box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
 }
 
 .dialog-actions {
