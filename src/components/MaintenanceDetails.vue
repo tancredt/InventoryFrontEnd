@@ -346,14 +346,9 @@ const fetchMaintenanceTasks = async () => {
       maintenanceTasks.value = result.data;
       // Sync selected task types with fetched tasks
       syncSelectedTaskTypes();
-      // Mark initial sync as complete
-      isInitialSync.value = false;
     } catch (error) {
       console.error('Error fetching maintenance tasks:', error);
     }
-  } else {
-    // If creating new maintenance, no existing tasks to sync
-    isInitialSync.value = false;
   }
 };
 
