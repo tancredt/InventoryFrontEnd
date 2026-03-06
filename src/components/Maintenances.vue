@@ -668,9 +668,12 @@ const downloadPDF = () => {
 
 .page-container {
   max-width: 1200px;
-  margin: 1rem auto;
+  margin: 0 auto;
   padding: 0 2rem;
-  flex: 1;
+  height: calc(100vh - 70px); /* Full height minus navbar */
+  overflow: hidden; /* Prevent page scrolling */
+  display: flex;
+  flex-direction: column;
 }
 
 h1 {
@@ -718,6 +721,8 @@ h1 {
 .table-container {
   display: flex;
   flex-direction: column;
+  flex: 1; /* Fill remaining space */
+  overflow: hidden; /* Prevent overflow */
 }
 
 .maintenances-table {
@@ -741,7 +746,7 @@ h1 {
 
 .maintenances-table tbody {
   display: block;
-  max-height: 60vh; /* Set a max height for scrolling */
+  max-height: calc(100vh - 200px); /* Adjust based on navbar, headers, pagination */
   overflow-y: auto;
 }
 

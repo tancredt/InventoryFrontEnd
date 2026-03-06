@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <Navbar v-if="authStore.isAuthenticated" />
-    <main>
+    <main :class="{ 'has-navbar': authStore.isAuthenticated }">
       <RouterView />
     </main>
   </div>
@@ -20,14 +20,12 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style>
 .app-container {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
-main {
-  flex: 1;
+main.has-navbar {
+  padding-top: 70px; /* Height of navbar + padding */
 }
 </style>

@@ -50,6 +50,10 @@ const handleLogout = async () => {
 
 <style scoped>
 .navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -57,6 +61,9 @@ const handleLogout = async () => {
   background-color: #2c3e50;
   color: white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+  height: 70px; /* Fixed height for consistent padding calculation */
+  box-sizing: border-box;
 }
 
 .nav-left {
