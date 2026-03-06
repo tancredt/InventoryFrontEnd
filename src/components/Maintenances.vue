@@ -669,7 +669,7 @@ const downloadPDF = () => {
 .page-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 1rem 2rem;
   height: calc(100vh - 70px); /* Full height minus navbar */
   overflow: hidden; /* Prevent page scrolling */
   display: flex;
@@ -678,14 +678,16 @@ const downloadPDF = () => {
 
 h1 {
   color: #2c3e50;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0; /* Don't shrink header */
 }
 
 .header-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0; /* Don't shrink actions */
 }
 
 .action-buttons {
@@ -723,6 +725,7 @@ h1 {
   flex-direction: column;
   flex: 1; /* Fill remaining space */
   overflow: hidden; /* Prevent overflow */
+  min-height: 0; /* Allow flex item to shrink below content size */
 }
 
 .maintenances-table {
@@ -746,7 +749,7 @@ h1 {
 
 .maintenances-table tbody {
   display: block;
-  max-height: calc(100vh - 200px); /* Adjust based on navbar, headers, pagination */
+  max-height: calc(100vh - 280px); /* Account for navbar, headers, actions, pagination */
   overflow-y: auto;
 }
 
