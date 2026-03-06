@@ -103,6 +103,9 @@
               <th @click="sortBy('purchase_date')" class="sortable">
                 Purchase Date <span v-if="sortKey === 'purchase_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
               </th>
+              <th @click="sortBy('location_updated')" class="sortable">
+                Loc. Updated <span v-if="sortKey === 'location_updated'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -119,6 +122,7 @@
               <td>{{ getConfigurationDisplay(detector.configuration) || 'N/A' }}</td>
               <td>{{ detector.firmware || 'N/A' }}</td>
               <td>{{ detector.purchase_date || 'N/A' }}</td>
+              <td>{{ formatLocationUpdated(detector.location_updated) || 'N/A' }}</td>
             </tr>
           </tbody>
         </table>
@@ -423,6 +427,19 @@ const getDetectorModelManufacturer = (modelId) => {
   return manufacturerMap[model.manufacturer] || model.manufacturer;
 };
 
+// Helper function to format location_updated timestamp
+const formatLocationUpdated = (timestamp) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  return date.toLocaleString('en-GB', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 // Function to perform sorting and pagination
 const performSortingAndPagination = () => {
   let result = [...detectors.value];
@@ -444,6 +461,9 @@ const performSortingAndPagination = () => {
         valA = getConfigurationDisplay(a.configuration) || '';
         valB = getConfigurationDisplay(b.configuration) || '';
       } else if (sortKey.value === 'purchase_date') {
+        valA = valA ? new Date(valA) : new Date(0);
+        valB = valB ? new Date(valB) : new Date(0);
+      } else if (sortKey.value === 'location_updated') {
         valA = valA ? new Date(valA) : new Date(0);
         valB = valB ? new Date(valB) : new Date(0);
       } else {
@@ -851,6 +871,11 @@ h1 {
 .detectors-table th:nth-child(8),
 .detectors-table td:nth-child(8) {
   width: 15%; /* Purchase Date */
+}
+
+.detectors-table th:nth-child(9),
+.detectors-table td:nth-child(9) {
+  width: 15%; /* Loc. Updated */
 }
 
 .detectors-table th {
