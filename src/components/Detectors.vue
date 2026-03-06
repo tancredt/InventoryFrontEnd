@@ -431,12 +431,10 @@ const getDetectorModelManufacturer = (modelId) => {
 const formatLocationUpdated = (timestamp) => {
   if (!timestamp) return '';
   const date = new Date(timestamp);
-  return date.toLocaleString('en-GB', {
+  return date.toLocaleDateString('en-GB', {
     year: 'numeric',
     month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
+    day: '2-digit'
   });
 };
 
