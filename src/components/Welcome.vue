@@ -32,7 +32,7 @@
         <div class="equipment-grid">
           <div class="equipment-card">
             <h4>Gas Detectors</h4>
-            <p>Multi-gas detectors including MicroRAE, MultiRAE, ToxiRAE, and AreaRAE models for detecting hazardous gases in emergency situations.</p>
+            <p>Multi-gas detectors including MicroRAE, MultiRAE, XAM8000, MSA Altair, and AreaRAE models for detecting hazardous gases in emergency situations.</p>
           </div>
           <div class="equipment-card">
             <h4>Calibration Cylinders</h4>

@@ -25,7 +25,8 @@
             <ul>
               <li><strong>MicroRAE</strong> - Compact personal gas monitor</li>
               <li><strong>MultiRAE</strong> - Multi-gas detector with PID sensor</li>
-              <li><strong>ToxiRAE</strong> - Single-gas personal monitor</li>
+              <li><strong>XAM8000</strong> - Multi-gas detector for hazmat response</li>
+              <li><strong>MSA Altair</strong> - Portable multigas detector</li>
               <li><strong>AreaRAE</strong> - Wireless area monitoring system</li>
             </ul>
           </div>
@@ -109,7 +110,7 @@
           For system support, equipment questions, or training requests, please contact:
         </p>
         <div class="contact-info">
-          <p><strong>Email:</strong> hazmat.support@frv.vic.gov.au</p>
+          <p><strong>Email:</strong> hazmat@frv.vic.gov.au</p>
           <p><strong>Phone:</strong> (03) XXXX XXXX</p>
           <p><strong>Hours:</strong> Monday to Friday, 8:00 AM - 5:00 PM</p>
         </div>

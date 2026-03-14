@@ -8,7 +8,7 @@
         <div class="faq-item">
           <h3>How do I log in to the system?</h3>
           <p>
-            Use your FRV network credentials to log in. If you don't have an account or are 
+            Use the provided credentials to log in. If you don't have an account or are 
             experiencing login issues, please contact the FRV Hazmat Department for assistance.
           </p>
         </div>
@@ -48,9 +48,9 @@
             The system supports various detector models including:
           </p>
           <ul>
-            <li>Honeywell/Rae - MicroRAE, MultiRAE, ToxiRAE, AreaRAE</li>
+            <li>Honeywell/Rae - MicroRAE, MultiRAE, AreaRAE</li>
+            <li>Draeger - XAM8000 series multigas detectors</li>
             <li>MSA - Altair series multigas detectors</li>
-            <li>Draeger - X-am series detectors</li>
             <li>Proengin - PID detectors</li>
           </ul>
         </div>
@@ -170,7 +170,8 @@
           </p>
           <ul>
             <li>MultiRAE/MicroRAE - Every 6 months or after sensor replacement</li>
-            <li>ToxiRAE - Every 6 months</li>
+            <li>XAM8000 - Every 6 months</li>
+            <li>MSA Altair - Every 6 months</li>
             <li>AreaRAE - Every 6 months</li>
             <li>After any unscheduled service or repair</li>
           </ul>
@@ -238,7 +239,7 @@
             For system support, equipment questions, or training requests:
           </p>
           <ul>
-            <li><strong>Email:</strong> hazmat.support@frv.vic.gov.au</li>
+            <li><strong>Email:</strong> hazmat@frv.vic.gov.au</li>
             <li><strong>Phone:</strong> (03) XXXX XXXX</li>
             <li><strong>Hours:</strong> Monday to Friday, 8:00 AM - 5:00 PM</li>
           </ul>
