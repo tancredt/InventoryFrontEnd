@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <AppHeader v-if="authStore.isAuthenticated" />
+    <Navbar v-if="authStore.isAuthenticated" />
     <main>
       <RouterView />
     </main>
@@ -10,7 +10,7 @@
 
 <script setup>
 import { RouterView } from 'vue-router'
-import AppHeader from './components/AppHeader.vue'
+import Navbar from './components/Navbar.vue'
 import AppFooter from './components/AppFooter.vue'
 import { useAuthStore } from './stores/auth'
 import { onMounted } from 'vue'
