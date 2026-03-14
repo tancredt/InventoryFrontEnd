@@ -1,15 +1,17 @@
 <template>
   <div class="app-container">
-    <Navbar v-if="authStore.isAuthenticated" />
+    <AppHeader v-if="authStore.isAuthenticated" />
     <main>
       <RouterView />
     </main>
+    <AppFooter v-if="authStore.isAuthenticated" />
   </div>
 </template>
 
 <script setup>
 import { RouterView } from 'vue-router'
-import Navbar from './components/Navbar.vue'
+import AppHeader from './components/AppHeader.vue'
+import AppFooter from './components/AppFooter.vue'
 import { useAuthStore } from './stores/auth'
 import { onMounted } from 'vue'
 
@@ -23,9 +25,12 @@ onMounted(async () => {
 <style>
 .app-container {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 main {
+  flex: 1;
   padding-top: 70px; /* Height of navbar */
 }
 </style>
