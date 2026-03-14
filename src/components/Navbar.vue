@@ -30,6 +30,15 @@
         </div>
       </div>
 
+      <!-- Help dropdown -->
+      <div class="dropdown">
+        <button class="dropdown-button nav-link">Help</button>
+        <div class="dropdown-content">
+          <router-link to="/about" class="dropdown-item">About</router-link>
+          <router-link to="/help" class="dropdown-item">Help & FAQ</router-link>
+        </div>
+      </div>
+
       <button @click="handleLogout" class="nav-link logout-button">Logout</button>
     </div>
   </div>

@@ -15,13 +15,26 @@ const router = createRouter({
     {
       path: '/',
       name: 'Welcome',
-      component: Welcome
+      component: Welcome,
+      meta: { title: 'Home - FRV Hazmat Equipment Inventory' }
+    },
+    {
+      path: '/about',
+      name: 'About',
+      component: () => import('@/components/About.vue'),
+      meta: { title: 'About - FRV Hazmat Equipment Inventory', requiresAuth: true }
+    },
+    {
+      path: '/help',
+      name: 'Help',
+      component: () => import('@/components/Help.vue'),
+      meta: { title: 'Help & FAQ - FRV Hazmat Equipment Inventory', requiresAuth: true }
     },
     {
       path: '/detectors',
       name: 'Detectors',
       component: Detectors,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, title: 'Detectors - FRV Hazmat Equipment Inventory' }
     },
     {
       path: '/detectors/add-multiple',
@@ -157,6 +170,10 @@ const router = createRouter({
 
 // Global route guard
 router.beforeEach(async (to, from, next) => {
+  // Update document title based on route meta
+  const title = to.meta?.title || 'FRV Hazmat Equipment Inventory';
+  document.title = title;
+
   if (to.meta.requiresAuth) {
     const authStore = useAuthStore()
     await authStore.checkAuth()
