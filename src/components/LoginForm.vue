@@ -74,10 +74,10 @@ const handleLogin = async () => {
 .login-container {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
   background-color: #f5f5f5;
-  padding: 1rem;
+  padding-top: 2rem;
 }
 
 .login-form {
