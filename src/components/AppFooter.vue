@@ -12,7 +12,7 @@
 .app-footer {
   background: #2c3e50;
   color: #999;
-  padding: 1.5rem 2rem;
+  padding: 0.5rem 2rem;
   margin-top: auto;
 }
 
@@ -20,11 +20,17 @@
   max-width: 1200px;
   margin: 0 auto;
   text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .footer-content p {
-  margin: 0.25rem 0;
-  font-size: 0.85rem;
+  margin: 0;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .copyright {
@@ -38,16 +44,22 @@
 
 .support {
   color: #777;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 @media (max-width: 768px) {
   .app-footer {
-    padding: 1rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   .footer-content p {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+    white-space: normal;
   }
 }
 </style>

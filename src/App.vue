@@ -31,6 +31,8 @@ onMounted(async () => {
 
 main {
   flex: 1;
-  padding-top: 70px; /* Height of navbar */
+  padding-top: 70px;
+  padding-bottom: 0.5rem;
+  overflow: auto;
 }
 </style>
