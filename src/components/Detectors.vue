@@ -642,7 +642,7 @@ const downloadPDF = () => {
 }
 
 .filters-section {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   position: relative;
   display: inline-block;
 }
@@ -651,14 +651,14 @@ const downloadPDF = () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.75rem;
   background-color: #42b883;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 1rem;
-  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
   transition: background-color 0.3s ease;
 }
 
@@ -691,12 +691,12 @@ const downloadPDF = () => {
   background-color: #f8f9fa;
   border: 1px solid #dee2e6;
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .reset-btn-wrapper {
@@ -704,27 +704,27 @@ const downloadPDF = () => {
 }
 
 .search-input {
-  padding: 0.5rem;
+  padding: 0.4rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   width: 200px;
 }
 
 .filter-select {
-  padding: 0.5rem;
+  padding: 0.4rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   min-width: 150px;
 }
 
 .reset-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.75rem;
   background-color: #dc3545;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .reset-btn:hover {
@@ -734,8 +734,8 @@ const downloadPDF = () => {
 .page-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem 2rem;
-  height: calc(100vh - 70px); /* Full height minus navbar */
+  padding: 0.5rem 1rem;
+  height: calc(100vh - 50px); /* Full height minus navbar */
   overflow: hidden; /* Prevent page scrolling */
   display: flex;
   flex-direction: column;
@@ -743,7 +743,8 @@ const downloadPDF = () => {
 
 h1 {
   color: #2c3e50;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 1.4rem;
   flex-shrink: 0; /* Don't shrink header */
 }
 
@@ -751,20 +752,20 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   flex-shrink: 0; /* Don't shrink actions */
 }
 
 .action-buttons {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .btn {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.75rem;
   border: none;
   border-radius: 4px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
@@ -814,12 +815,12 @@ h1 {
   word-wrap: break-word;
   z-index: 10; /* Ensure headers stay above scrolled content */
   border-bottom: 1px solid #ddd;
-  padding: 0.5rem;
+  padding: 0.4rem;
 }
 
 .detectors-table tbody {
   display: block;
-  max-height: calc(100vh - 280px); /* Account for navbar, headers, actions, pagination */
+  max-height: calc(100vh - 220px); /* Account for navbar, headers, actions, pagination */
   overflow-y: auto;
 }
 
@@ -832,7 +833,7 @@ h1 {
 
 .detectors-table th,
 .detectors-table td {
-  padding: 0.5rem;
+  padding: 0.4rem;
   text-align: left;
   border-bottom: 1px solid #ddd;
   word-wrap: break-word;
@@ -1091,25 +1092,25 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0.5rem;
-  padding: 0.5rem 0;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0;
 }
 
 .pagination-info {
   color: #666;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .pagination-controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .pagination-controls .page-info {
   color: #666;
-  font-size: 0.9rem;
-  min-width: 120px;
+  font-size: 0.85rem;
+  min-width: 100px;
   text-align: center;
 }
 

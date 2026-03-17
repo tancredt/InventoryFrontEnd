@@ -66,12 +66,12 @@ const handleLogout = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 0.5rem 2rem;
   background-color: #2c3e50;
   color: white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   z-index: 1000;
-  height: 70px; /* Fixed height for consistent padding calculation */
+  height: 50px; /* Fixed height for consistent padding calculation */
   box-sizing: border-box;
 }
 

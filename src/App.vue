@@ -31,8 +31,8 @@ onMounted(async () => {
 
 main {
   flex: 1;
-  padding-top: 70px;
-  padding-bottom: 0.5rem;
+  padding-top: 50px;
+  padding-bottom: 0.25rem;
   overflow: auto;
 }
 </style>

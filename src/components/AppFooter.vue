@@ -12,7 +12,7 @@
 .app-footer {
   background: #2c3e50;
   color: #999;
-  padding: 0.5rem 2rem;
+  padding: 0.35rem 2rem;
   margin-top: auto;
 }
 
