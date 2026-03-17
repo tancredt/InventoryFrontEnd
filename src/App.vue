@@ -34,5 +34,6 @@ main {
   padding-top: 50px;
   padding-bottom: 0.25rem;
   overflow: auto;
+  max-height: calc(100vh - 50px);
 }
 </style>
