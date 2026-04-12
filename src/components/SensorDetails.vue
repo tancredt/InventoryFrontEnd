@@ -239,12 +239,18 @@ const fetchSensor = async () => {
 };
 
 // Helper functions to get related object labels using stores
+const sensorGasLabels = {
+  CO: 'CO', HS: 'H2S', LE: 'LEL', O2: 'O2', VO: 'VOC', HC: 'HCN',
+  CL: 'Cl2', PH: 'PH3', SO: 'SO2', NO: 'NO2', C2: 'CO2', NH: 'NH3',
+  ET: 'ETO', CS: 'CO/H2S'
+};
+
 const getSensorTypeLabel = (sensorTypeId) => {
   if (!sensorTypeId) return 'N/A';
   const sensorType = sensorTypes.value.find(st => st.id === sensorTypeId);
   if (!sensorType) return 'Unknown Sensor Type';
   const parts = [sensorType.part_number];
-  if (sensorType.sensorgas) parts.push(`(${sensorType.sensorgas})`);
+  if (sensorType.sensorgas) parts.push(`(${sensorGasLabels[sensorType.sensorgas] || sensorType.sensorgas})`);
   if (sensorType.compatible_detectormodels) parts.push(`[${sensorType.compatible_detectormodels}]`);
   return parts.join(' ');
 };
