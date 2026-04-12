@@ -242,7 +242,11 @@ const fetchSensor = async () => {
 const getSensorTypeLabel = (sensorTypeId) => {
   if (!sensorTypeId) return 'N/A';
   const sensorType = sensorTypes.value.find(st => st.id === sensorTypeId);
-  return sensorType ? sensorType.part_number : 'Unknown Sensor Type';
+  if (!sensorType) return 'Unknown Sensor Type';
+  const parts = [sensorType.part_number];
+  if (sensorType.sensorgas) parts.push(`(${sensorType.sensorgas})`);
+  if (sensorType.compatible_detectormodels) parts.push(`[${sensorType.compatible_detectormodels}]`);
+  return parts.join(' ');
 };
 
 // Close dialog function

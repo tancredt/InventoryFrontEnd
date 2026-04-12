@@ -39,6 +39,14 @@
                 <option value="O2">O2</option>
                 <option value="VO">VOC</option>
                 <option value="HC">HCN</option>
+                <option value="CL">Cl2</option>
+                <option value="NH">NH3</option>
+                <option value="NO">NO2</option>
+                <option value="SO">SO2</option>
+                <option value="PH">PH3</option>
+                <option value="IR">IR</option>
+                <option value="EC">EC</option>
+                <option value="PID">PID</option>
               </select>
             </div>
 
